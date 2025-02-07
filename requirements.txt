@@ -1,0 +1,7 @@
+numpy
+torch
+torch-hd
+tk
+tqdm
+pandas
+scipy
