@@ -73,17 +73,20 @@ def train(model, data, learning_rate, epochs, device, val_loader):
         plt.plot(np.arange(1, epoch + 2), accs)
         plt.xlabel("Epoch")
         plt.ylabel("Validation Accuracy")
-        plt.savefig("./cnnhdc_fashionmnist_val_acc.png")
+        plt.title("HDC CNN Validatation Accuracy over Epochs")
+        plt.savefig("./hdccnn_fashionmnist_val_acc.png")
         plt.figure()
         plt.plot(np.arange(1, epoch + 2), losses)
         plt.xlabel("Epoch")
         plt.ylabel("Training Loss")
-        plt.savefig("./cnnhdc_fashionmnist_training_loss.png")
+        plt.title("HDC CNN Training Loss over Epochs")
+        plt.savefig("./hdccnn_fashionmnist_training_loss.png")
         plt.figure()
         plt.plot(np.arange(1, epoch + 2), val_losses)
         plt.xlabel("Epoch")
         plt.ylabel("Validation Loss")
-        plt.savefig("./cnnhdc_fashionmnist_val_loss.png")
+        plt.title("HDC CNN Validatation Loss over Epochs")
+        plt.savefig("./hdccnn_fashionmnist_val_loss.png")
     
     return best_cnn
 
@@ -132,13 +135,13 @@ def test(model, testloader, device):
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
-    plt.title('Confusion Matrix')
-    plt.savefig("./kanc_fashionmnist_confusion_matrix.png")
+    plt.title('HDC CNN Confusion Matrix')
+    plt.savefig("./cnnhdc_fashionmnist_confusion_matrix.png")
     plt.show()
 
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open("./cnnhdc_classification_report.txt", 'a', newline='') as file:
+    with open("./hdccnn_classification_report.txt", 'a', newline='') as file:
         file.write(classification_report(all_labels, all_preds)) 
     return
 

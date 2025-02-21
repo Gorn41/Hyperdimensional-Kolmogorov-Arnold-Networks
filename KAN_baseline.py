@@ -76,16 +76,19 @@ def train(model, data, learning_rate, epochs, device, val_loader):
         plt.plot(np.arange(1, epoch + 2), accs)
         plt.xlabel("Epoch")
         plt.ylabel("Validation Accuracy")
+        plt.title("KANC Baseline Validatation Accuracy over Epochs")
         plt.savefig("./kanc_fashionmnist_val_acc.png")
         plt.figure()
         plt.plot(np.arange(1, epoch + 2), losses)
         plt.xlabel("Epoch")
         plt.ylabel("Training Loss")
+        plt.title("KANC Baseline Training Loss over Epochs")
         plt.savefig("./kanc_fashionmnist_training_loss.png")
         plt.figure()
         plt.plot(np.arange(1, epoch + 2), val_losses)
         plt.xlabel("Epoch")
         plt.ylabel("Validation Loss")
+        plt.title("KANC Baseline Validatation Loss over Epochs")
         plt.savefig("./kanc_fashionmnist_val_loss.png")
     return best_cnn
 
@@ -134,7 +137,7 @@ def test(model, testloader, device):
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
-    plt.title('Confusion Matrix')
+    plt.title('KANC Baseline Confusion Matrix')
     plt.savefig("./kanc_fashionmnist_confusion_matrix.png")
     plt.show()
 
