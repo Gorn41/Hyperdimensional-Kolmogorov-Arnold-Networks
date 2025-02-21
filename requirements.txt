@@ -6,3 +6,4 @@ tqdm
 pandas
 scipy
 torchvision
+matplotlib

@@ -3,6 +3,8 @@ import torch.nn as nn
 import torchvision
 import tqdm
 import numpy as np
+import copy
+import matplotlib.pyplot as plt
 
 class CNN(nn.Module):
     def __init__(self):
@@ -22,8 +24,6 @@ class CNN(nn.Module):
         x = self.max_pool1(x)
         x = self.conv_layer2(x)
         x = self.conv_layer3(x)
-        print(type(x))
-        print(x.shape)
         x = self.flatten(x)
         
         x = self.fc1(x)
@@ -34,6 +34,8 @@ class CNN(nn.Module):
 
 
 def train(model, data, learning_rate, epochs, device, val_loader):
+    accs = []
+    best_acc = None
     loss_func = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     for epoch in tqdm.tqdm(range(epochs)):
@@ -46,8 +48,18 @@ def train(model, data, learning_rate, epochs, device, val_loader):
             loss.backward()
             optimizer.step()
         val_acc = validate(model, val_loader, device)
+        accs.append(val_acc)
+        if best_acc == None or val_acc > best_acc:
+            best_cnn = copy.deepcopy(model)
         print(f"Epoch {epoch+1}/{epochs}, Validation Accuracy: {val_acc:.2f}%")
-    return
+        epoch_axis = list(np.arange(epoch + 1) + 1)
+        plt.figure()
+        plt.plot(epoch_axis, accs)
+        plt.xlabel("epoch")
+        plt.ylabel("validation accuracy")
+        plt.savefig("./cnn_baseline_val_err")
+    
+    return best_cnn
 
 def validate(model, val_loader, device):
     model.eval()
