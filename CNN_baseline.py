@@ -11,12 +11,12 @@ import seaborn as sns
 class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
-        self.conv_layer1 = nn.Conv2d(1, 3, 3)  # Input: (1, 28, 28) -> Output: (3, 26, 26)
+        self.conv_layer1 = nn.Conv2d(1, 5, 3)  # Input: (1, 28, 28) -> Output: (3, 26, 26)
         self.max_pool1 = nn.MaxPool2d(2, 2)  # Output: (3, 13, 13)
-        self.conv_layer2 = nn.Conv2d(3, 6, 3)  # Output: (6, 11, 11)
-        self.conv_layer3 = nn.Conv2d(6, 2, 3)  # Output: (2, 9, 9)
+        self.conv_layer2 = nn.Conv2d(5, 5, 3)  # Output: (6, 11, 11)
+        self.conv_layer3 = nn.Conv2d(5, 2, 3)  # Output: (6, 11, 11)
         self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(2 * 9 * 9, 500)  # Adjusted to match output size
+        self.fc1 = nn.Linear(50, 500)  # Adjusted to match output size
         self.relu = nn.ReLU()
         self.fc2 = nn.Linear(500, 10)  # 10 classes for FashionMNIST
 
@@ -24,6 +24,7 @@ class CNN(nn.Module):
         x = self.conv_layer1(x)
         x = self.max_pool1(x)
         x = self.conv_layer2(x)
+        x = self.max_pool1(x)
         x = self.conv_layer3(x)
         x = self.flatten(x)
         x = self.fc1(x)

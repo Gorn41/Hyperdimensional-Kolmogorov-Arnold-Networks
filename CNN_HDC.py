@@ -12,6 +12,8 @@ import seaborn as sns
 class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
+        #change architecture to match the others
+
         self.conv_layer1 = nn.Conv2d(1, 3, 3)  # Input: (1, 28, 28) -> Output: (3, 26, 26)
         self.max_pool1 = nn.MaxPool2d(2, 2)  # Output: (3, 13, 13)
         self.conv_layer2 = nn.Conv2d(3, 6, 3)  # Output: (6, 11, 11)
