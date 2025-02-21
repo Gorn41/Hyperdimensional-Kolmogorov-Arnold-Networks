@@ -81,6 +81,7 @@ def train(model, data, learning_rate, epochs, device, val_loader):
         plt.title("CNN baseline Validatation Loss over Epochs")
         plt.ylabel("Validation Loss")
         plt.savefig("./cnn_fashionmnist_val_loss.png")
+        plt.close('all')
     
     return best_cnn
 
@@ -129,13 +130,13 @@ def test(model, testloader, device):
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
-    plt.title('CNN Baseline Confusion Matrix')
-    plt.savefig("./cnn_fashionmnist_confusion_matrix.png")
+    plt.title('CNN Baseline Confusion Matrix (No Noise)')
+    plt.savefig("./cnn_fashionmnist_confusion_matrix_no_noise.png")
     plt.show()
 
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open("./cnn_baseline_classification_report.txt", 'a', newline='') as file:
+    with open("./cnn_baseline_classification_report_no_noise.txt", 'a', newline='') as file:
         file.write(classification_report(all_labels, all_preds)) 
     return
 

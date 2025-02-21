@@ -90,6 +90,7 @@ def train(model, data, learning_rate, epochs, device, val_loader):
         plt.ylabel("Validation Loss")
         plt.title("KANC Baseline Validatation Loss over Epochs")
         plt.savefig("./kanc_fashionmnist_val_loss.png")
+        plt.close('all')
     return best_cnn
 
 def validate(model, val_loader, loss_func, device):
@@ -137,13 +138,13 @@ def test(model, testloader, device):
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
-    plt.title('KANC Baseline Confusion Matrix')
-    plt.savefig("./kanc_fashionmnist_confusion_matrix.png")
+    plt.title('KANC Baseline Confusion Matrix (No Noise)')
+    plt.savefig("./kanc_fashionmnist_confusion_matrix_no_noise.png")
     plt.show()
 
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open("./KANC_classification_report.txt", 'a', newline='') as file:
+    with open("./KANC_classification_report_no_noise.txt", 'a', newline='') as file:
         file.write(classification_report(all_labels, all_preds))   
     return
 

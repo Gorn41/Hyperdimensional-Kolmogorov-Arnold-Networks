@@ -87,6 +87,7 @@ def train(model, data, learning_rate, epochs, device, val_loader):
         plt.ylabel("Validation Loss")
         plt.title("HDC CNN Validatation Loss over Epochs")
         plt.savefig("./hdccnn_fashionmnist_val_loss.png")
+        plt.close('all')
     
     return best_cnn
 
@@ -135,13 +136,13 @@ def test(model, testloader, device):
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
-    plt.title('HDC CNN Confusion Matrix')
-    plt.savefig("./cnnhdc_fashionmnist_confusion_matrix.png")
+    plt.title('HDC CNN Confusion Matrix (No Noise)')
+    plt.savefig("./cnnhdc_fashionmnist_confusion_matrix_no_noise.png")
     plt.show()
 
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open("./hdccnn_classification_report.txt", 'a', newline='') as file:
+    with open("./hdccnn_classification_report_no_noise.txt", 'a', newline='') as file:
         file.write(classification_report(all_labels, all_preds)) 
     return
 
