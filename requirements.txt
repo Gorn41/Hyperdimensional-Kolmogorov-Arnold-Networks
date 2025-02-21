@@ -5,3 +5,4 @@ tk
 tqdm
 pandas
 scipy
+torchvision

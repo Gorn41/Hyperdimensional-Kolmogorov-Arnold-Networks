@@ -22,12 +22,12 @@ class HDC:
         res = torch.empty((self.hvsize ** 2,), dtype=torch.bool)
         for i in range(self.dims):
             for j in range(self.dims):
-                color = image.getpixel((i, j))
-                if color not in self.codebook:
-                    self.set(color)
-                color_hv = self.get(color)
+                value = image.getpixel((i, j))
+                if value not in self.codebook:
+                    self.set(value)
+                value_hv = self.get(value)
                 for k in range((i * self.dims) + j):
-                    color_hv = torchhd.permute(color_hv)
+                    value_hv = torchhd.permute(value_hv)
                 res[i * self.dims + j]
         return torchhd.multibundle(res)
 
