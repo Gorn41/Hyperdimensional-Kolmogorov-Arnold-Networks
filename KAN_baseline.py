@@ -104,6 +104,8 @@ def main():
     model = model.to(device)
     train(model, trainloader, learning_rate, epochs, device, valloader)
 
+    torch.save(model.state_dict(), "models/KANC_MLP.pth")
+    print("Model saved as models/KANC_MLP.pth")
     return
 
 if __name__ == '__main__':

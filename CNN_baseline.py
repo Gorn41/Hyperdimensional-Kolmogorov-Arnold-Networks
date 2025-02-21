@@ -99,6 +99,10 @@ def main():
 
     model = CNN().to(device)
     best_model = train(model, trainloader, learning_rate, epochs, device, valloader)
+    
+    torch.save(best_model.state_dict(), "models/cnn_baseline_fashion_MNIST.pth")
+    print("Model saved as models/cnn_baseline_fashion_MNIST.pth")
 
 if __name__ == '__main__':
     main()
+
