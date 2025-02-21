@@ -9,10 +9,11 @@ import matplotlib.pyplot as plt
 class CNN_GP(nn.Module):
     def __init__(self):
         super(CNN_GP, self).__init__()
-        self.conv_layer1 = nn.Conv2d(1, 5, 3)  # Input: (1, 28, 28) -> Output: (3, 26, 26)
+        self.conv_layer1 = nn.Conv2d(1, 32, 3)  # Input: (1, 28, 28) -> Output: (3, 26, 26)
         self.max_pool1 = nn.MaxPool2d(2, 2)  # Output: (3, 13, 13)
-        self.conv_layer2 = nn.Conv2d(5, 5, 3)  # Output: (6, 11, 11)
-        self.global_avg_pool = nn.AdaptiveAvgPool2d(1)  # GMP instead of Flatten()
+        self.conv_layer2 = nn.Conv2d(32, 64, 3)  # Output: (6, 11, 11)
+        self.conv_layer3 = nn.Conv2d(64, 125, 3)
+        self.global_avg_pool = nn.AdaptiveAvgPool2d((1, 1))  # GMP instead of Flatten()
         self.flatten  = nn.Flatten()
         self.fc1 = nn.Linear(125, 500)  # Adjusted to match output size
         self.relu = nn.ReLU()
@@ -22,7 +23,8 @@ class CNN_GP(nn.Module):
         x = self.conv_layer1(x)
         x = self.max_pool1(x)
         x = self.conv_layer2(x)
-
+        x = self.max_pool1(x)
+        x = self.conv_layer3(x)
         x = self.global_avg_pool(x)  # Output shape: (batch, 2, 1, 1)
         x = self.flatten(x)  # Flatten only last two dimensions
 
