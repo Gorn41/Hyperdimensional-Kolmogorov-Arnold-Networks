@@ -130,7 +130,7 @@ def test(model, testloader, device):
 
     print(f'Test Accuracy: {100 * correct / total:.2f}%')
     test_loss = total_loss / len(testloader.dataset)
-    print(f'Test Loss: {test_loss}%')
+    print(f'Test Loss: {test_loss}')
     cm = confusion_matrix(all_labels, all_preds)
     plt.figure(figsize=(8, 6))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
@@ -143,6 +143,7 @@ def test(model, testloader, device):
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
     with open("./hdccnn_classification_report_no_noise.txt", 'a', newline='') as file:
+                file.write(f'Test Accuracy: {100 * correct / total:.2f}%, Test Loss: {test_loss}')
         file.write(classification_report(all_labels, all_preds)) 
     return
 
