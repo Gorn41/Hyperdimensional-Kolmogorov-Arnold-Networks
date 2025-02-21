@@ -7,7 +7,8 @@ from kan_convolutional.KANConv import KAN_Convolutional_Layer
 import matplotlib.pyplot as plt
 import copy
 import numpy as np
-
+from sklearn.metrics import confusion_matrix, classification_report
+import seaborn as sns
 
 class KANC_MLP(nn.Module):
     def __init__(self,grid_size: int = 5):
@@ -39,37 +40,60 @@ class KANC_MLP(nn.Module):
         x = self.linear1(x)
         x = F.log_softmax(x, dim=1)
         return x
-    
+
 def train(model, data, learning_rate, epochs, device, val_loader):
     accs = []
-    best_acc = None
+    val_losses = []
+    losses = []
+    best_acc = 0
     loss_func = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    batch_size = len(data)
     for epoch in tqdm.tqdm(range(epochs)):
-        for batch_index, (images, labels) in enumerate(data):
+        total_loss = 0
+        for batch_index, (images, labels) in (enumerate(tqdm.tqdm(data, total=batch_size))):
             images = images.to(device)
             labels = labels.to(device)
             optimizer.zero_grad()
             outputs = model.forward(images)
             loss = loss_func(outputs, labels)
+            total_loss += loss.item() * images.size(0)
             loss.backward()
             optimizer.step()
-        val_acc = validate(model, val_loader, device)
+        losses.append(total_loss / len(data.dataset))
+        val_data = validate(model, val_loader, loss_func, device)
+        val_acc = val_data[0]
         accs.append(val_acc)
-        if best_acc == None or val_acc > best_acc:
+        val_losses.append(val_data[1])
+        
+        if val_acc > best_acc:
+            best_acc = val_acc
             best_cnn = copy.deepcopy(model)
-        print(f"Epoch {epoch+1}/{epochs}, Validation Accuracy: {val_acc:.2f}%")
-        epoch_axis = list(np.arange(epoch + 1) + 1)
-        plt.figure()
-        plt.plot(epoch_axis, accs)
-        plt.xlabel("epoch")
-        plt.ylabel("validation accuracy")
-        plt.savefig("./cnn_baseline_val_err")
 
-def validate(model, val_loader, device):
+        print(f"Epoch {epoch+1}/{epochs}, Validation Accuracy: {val_acc:.2f}%")
+        
+        plt.figure()
+        plt.plot(np.arange(1, epoch + 2), accs)
+        plt.xlabel("Epoch")
+        plt.ylabel("Validation Accuracy")
+        plt.savefig("./kanc_fashionmnist_val_acc.png")
+        plt.figure()
+        plt.plot(np.arange(1, epoch + 2), losses)
+        plt.xlabel("Epoch")
+        plt.ylabel("Training Loss")
+        plt.savefig("./kanc_fashionmnist_training_loss.png")
+        plt.figure()
+        plt.plot(np.arange(1, epoch + 2), val_losses)
+        plt.xlabel("Epoch")
+        plt.ylabel("Validation Loss")
+        plt.savefig("./kanc_fashionmnist_val_loss.png")
+    return best_cnn
+
+def validate(model, val_loader, loss_func, device):
     model.eval()
     correct = 0
     total = 0
+    total_loss = 0
     with torch.no_grad():
         for images, labels in val_loader:
             images, labels = images.to(device), labels.to(device)
@@ -77,9 +101,47 @@ def validate(model, val_loader, device):
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-    return 100 * correct / total
+            loss = loss_func(outputs, labels)
+            total_loss += loss.item() * images.size(0)
+    return (100 * correct / total, total_loss / len(val_loader.dataset))
 
-def test():
+def test(model, testloader, device):
+    model.eval()
+    correct = 0
+    total = 0
+    total_loss = 0
+    batch_size = len(testloader)
+    loss_func = nn.CrossEntropyLoss()
+    all_preds = []
+    all_labels = []
+    with torch.no_grad():
+        for images, labels in testloader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            _, predicted = torch.max(outputs, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+            loss = loss_func(outputs, labels)
+            total_loss += loss.item() * images.size(0)
+            all_preds.extend(predicted.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+
+    print(f'Test Accuracy: {100 * correct / total:.2f}%')
+    test_loss = total_loss / len(testloader.dataset)
+    print(f'Test Loss: {test_loss}%')
+    cm = confusion_matrix(all_labels, all_preds)
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
+    plt.xlabel('Predicted')
+    plt.ylabel('Actual')
+    plt.title('Confusion Matrix')
+    plt.savefig("./kanc_fashionmnist_confusion_matrix.png")
+    plt.show()
+
+    print("Classification Report:")
+    print(classification_report(all_labels, all_preds))
+    with open("./KANC_classification_report.txt", 'a', newline='') as file:
+        file.write(classification_report(all_labels, all_preds))   
     return
 
 def main():
@@ -95,14 +157,15 @@ def main():
     train_data = torchvision.datasets.MNIST(root='data', train=True, download=True, transform=transform)
     other_data = torchvision.datasets.MNIST(root='data', train=False, download=True, transform=transform)
     val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
-    
+
     trainloader = torch.utils.data.DataLoader(train_data, batch_size=batch_sz, shuffle=True)
     valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_sz, shuffle=True)
     testloader = torch.utils.data.DataLoader(test_data, batch_size=batch_sz)
 
     model = KANC_MLP()
     model = model.to(device)
-    train(model, trainloader, learning_rate, epochs, device, valloader)
+    best_model = train(model, trainloader, learning_rate, epochs, device, valloader)
+    test(best_model, testloader, device)
 
     torch.save(model.state_dict(), "models/KANC_MLP.pth")
     print("Model saved as models/KANC_MLP.pth")

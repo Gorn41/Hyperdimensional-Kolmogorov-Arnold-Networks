@@ -75,9 +75,9 @@ class hdc_model:
             res[i] = post
         return res
     
-        # try linear coords for 3d tenser
+        # try linear coords for 3d tensor
         # also try linear coords for 2d channel then concatenate
-        # also try bundling/binding all three channels
+        # also try bundling/binding all three channels after doing linear coords on 2d
         # send HDC model to device
 
 

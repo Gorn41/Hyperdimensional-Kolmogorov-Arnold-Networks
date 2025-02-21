@@ -6,6 +6,8 @@ import numpy as np
 import copy
 import matplotlib.pyplot as plt
 from HDC import hdc_model
+from sklearn.metrics import confusion_matrix, classification_report
+import seaborn as sns
 
 class CNN(nn.Module):
     def __init__(self):
@@ -15,11 +17,11 @@ class CNN(nn.Module):
         self.conv_layer2 = nn.Conv2d(3, 6, 3)  # Output: (6, 11, 11)
         self.conv_layer3 = nn.Conv2d(6, 1, 3)  # Output: (2, 9, 9)
         k = 1 # output channel size of final conv layer
-        self.hdc_modules = hdc_model(1000 * k, 9)
+        self.hdc_modules = hdc_model(500 * k, 9)
 
-        self.fc1 = nn.Linear(1000, 3000)  # Adjusted to match output size
+        self.fc1 = nn.Linear(500, 1000)  # Adjusted to match output size
         self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(3000, 10)  # 10 classes for FashionMNIST
+        self.fc2 = nn.Linear(1000, 10)  # 10 classes for FashionMNIST
 
     def forward(self, x):
         x = self.conv_layer1(x)
@@ -37,24 +39,29 @@ class CNN(nn.Module):
 
 def train(model, data, learning_rate, epochs, device, val_loader):
     accs = []
+    losses = []
+    val_losses = []
     best_acc = 0
     best_cnn = None
     loss_func = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     batch_size = len(data)
     for epoch in tqdm.tqdm(range(epochs)):
-        model.train()
+        total_loss = 0
         for batch_index, (images, labels) in (enumerate(tqdm.tqdm(data, total=batch_size))):
             images = images.to(device)
             labels = labels.to(device)
             optimizer.zero_grad()
-            outputs = model(images)
+            outputs = model.forward(images)
             loss = loss_func(outputs, labels)
+            total_loss += loss.item() * images.size(0)
             loss.backward()
             optimizer.step()
-
-        val_acc = validate(model, val_loader, device)
+        losses.append(total_loss / len(data.dataset))
+        val_data = validate(model, val_loader, loss_func, device)
+        val_acc = val_data[0]
         accs.append(val_acc)
+        val_losses.append(val_data[1])
         
         if val_acc > best_acc:
             best_acc = val_acc
@@ -66,22 +73,74 @@ def train(model, data, learning_rate, epochs, device, val_loader):
         plt.plot(np.arange(1, epoch + 2), accs)
         plt.xlabel("Epoch")
         plt.ylabel("Validation Accuracy")
-        plt.savefig("./cnn_fashionmnist_val_acc.png")
+        plt.savefig("./cnnhdc_fashionmnist_val_acc.png")
+        plt.figure()
+        plt.plot(np.arange(1, epoch + 2), losses)
+        plt.xlabel("Epoch")
+        plt.ylabel("Training Loss")
+        plt.savefig("./cnnhdc_fashionmnist_training_loss.png")
+        plt.figure()
+        plt.plot(np.arange(1, epoch + 2), val_losses)
+        plt.xlabel("Epoch")
+        plt.ylabel("Validation Loss")
+        plt.savefig("./cnnhdc_fashionmnist_val_loss.png")
     
     return best_cnn
 
-def validate(model, val_loader, device):
+def validate(model, val_loader, loss_func, device):
     model.eval()
     correct = 0
     total = 0
+    total_loss = 0
     with torch.no_grad():
         for images, labels in val_loader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model.forward(images)
+            _, predicted = torch.max(outputs, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+            loss = loss_func(outputs, labels)
+            total_loss += loss.item() * images.size(0)
+    return (100 * correct / total, total_loss / len(val_loader.dataset))
+
+def test(model, testloader, device):
+    model.eval()
+    correct = 0
+    total = 0
+    total_loss = 0
+    batch_size = len(testloader)
+    loss_func = nn.CrossEntropyLoss()
+    all_preds = []
+    all_labels = []
+    with torch.no_grad():
+        for images, labels in testloader:
             images, labels = images.to(device), labels.to(device)
             outputs = model(images)
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-    return 100 * correct / total
+            loss = loss_func(outputs, labels)
+            total_loss += loss.item() * images.size(0)
+            all_preds.extend(predicted.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+
+    print(f'Test Accuracy: {100 * correct / total:.2f}%')
+    test_loss = total_loss / len(testloader.dataset)
+    print(f'Test Loss: {test_loss}%')
+    cm = confusion_matrix(all_labels, all_preds)
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
+    plt.xlabel('Predicted')
+    plt.ylabel('Actual')
+    plt.title('Confusion Matrix')
+    plt.savefig("./kanc_fashionmnist_confusion_matrix.png")
+    plt.show()
+
+    print("Classification Report:")
+    print(classification_report(all_labels, all_preds))
+    with open("./cnnhdc_classification_report.txt", 'a', newline='') as file:
+        file.write(classification_report(all_labels, all_preds)) 
+    return
 
 def main():
     batch_sz = 32
@@ -105,9 +164,10 @@ def main():
 
     model = CNN().to(device)
     best_model = train(model, trainloader, learning_rate, epochs, device, valloader)
+    test(best_model, testloader, device)
     
-    torch.save(best_model.state_dict(), "models/cnn_baseline_fashion_MNIST.pth")
-    print("Model saved as models/cnn_baseline_fashion_MNIST.pth")
+    torch.save(best_model.state_dict(), "models/cnn_hdc_fashion_MNIST.pth")
+    print("Model saved as models/cnn_hdc_fashion_MNIST.pth")
 
 if __name__ == '__main__':
     main()

@@ -5,6 +5,8 @@ import tqdm
 import numpy as np
 import copy
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, classification_report
+import seaborn as sns
 
 class CNN(nn.Module):
     def __init__(self):
@@ -31,25 +33,30 @@ class CNN(nn.Module):
 
 def train(model, data, learning_rate, epochs, device, val_loader):
     accs = []
+    losses = []
+    val_losses = []
     best_acc = 0
     best_cnn = None
     loss_func = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
+    batch_size = len(data)
     for epoch in tqdm.tqdm(range(epochs)):
-        model.train()
-        for batch_index, (images, labels) in enumerate(data):
+        total_loss = 0
+        for batch_index, (images, labels) in (enumerate(tqdm.tqdm(data, total=batch_size))):
             images = images.to(device)
             labels = labels.to(device)
             optimizer.zero_grad()
-            outputs = model(images)
+            outputs = model.forward(images)
             loss = loss_func(outputs, labels)
+            total_loss += loss.item() * images.size(0)
             loss.backward()
             optimizer.step()
-
-        val_acc = validate(model, val_loader, device)
+        losses.append(total_loss / len(data.dataset))
+        val_data = validate(model, val_loader, loss_func, device)
+        val_acc = val_data[0]
         accs.append(val_acc)
-        
+        val_losses.append(val_data[1])
+
         if val_acc > best_acc:
             best_acc = val_acc
             best_cnn = copy.deepcopy(model)
@@ -61,21 +68,73 @@ def train(model, data, learning_rate, epochs, device, val_loader):
         plt.xlabel("Epoch")
         plt.ylabel("Validation Accuracy")
         plt.savefig("./cnn_fashionmnist_val_acc.png")
+        plt.figure()
+        plt.plot(np.arange(1, epoch + 2), losses)
+        plt.xlabel("Epoch")
+        plt.ylabel("Training Loss")
+        plt.savefig("./cnn_fashionmnist_training_loss.png")
+        plt.figure()
+        plt.plot(np.arange(1, epoch + 2), val_losses)
+        plt.xlabel("Epoch")
+        plt.ylabel("Validation Loss")
+        plt.savefig("./cnn_fashionmnist_val_loss.png")
     
     return best_cnn
 
-def validate(model, val_loader, device):
+def validate(model, val_loader, loss_func, device):
     model.eval()
     correct = 0
     total = 0
+    total_loss = 0
     with torch.no_grad():
         for images, labels in val_loader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model.forward(images)
+            _, predicted = torch.max(outputs, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+            loss = loss_func(outputs, labels)
+            total_loss += loss.item() * images.size(0)
+    return (100 * correct / total, total_loss / len(val_loader.dataset))
+
+def test(model, testloader, device):
+    model.eval()
+    correct = 0
+    total = 0
+    total_loss = 0
+    batch_size = len(testloader)
+    loss_func = nn.CrossEntropyLoss()
+    all_preds = []
+    all_labels = []
+    with torch.no_grad():
+        for images, labels in testloader:
             images, labels = images.to(device), labels.to(device)
             outputs = model(images)
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-    return 100 * correct / total
+            loss = loss_func(outputs, labels)
+            total_loss += loss.item() * images.size(0)
+            all_preds.extend(predicted.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+
+    print(f'Test Accuracy: {100 * correct / total:.2f}%')
+    test_loss = total_loss / len(testloader.dataset)
+    print(f'Test Loss: {test_loss}%')
+    cm = confusion_matrix(all_labels, all_preds)
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
+    plt.xlabel('Predicted')
+    plt.ylabel('Actual')
+    plt.title('Confusion Matrix')
+    plt.savefig("./kanc_fashionmnist_confusion_matrix.png")
+    plt.show()
+
+    print("Classification Report:")
+    print(classification_report(all_labels, all_preds))
+    with open("./cnn_baseline_classification_report.txt", 'a', newline='') as file:
+        file.write(classification_report(all_labels, all_preds)) 
+    return
 
 def main():
     batch_sz = 32
@@ -99,6 +158,7 @@ def main():
 
     model = CNN().to(device)
     best_model = train(model, trainloader, learning_rate, epochs, device, valloader)
+    test(best_model, testloader, device)
     
     torch.save(best_model.state_dict(), "models/cnn_baseline_fashion_MNIST.pth")
     print("Model saved as models/cnn_baseline_fashion_MNIST.pth")
