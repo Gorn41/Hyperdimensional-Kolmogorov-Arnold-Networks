@@ -33,24 +33,34 @@ class CNN(nn.Module):
         return x
 
 
-def train(model, data, learning_rate, epochs, device):
-        # add accuracy tracking later
-        accs = []
-        loss_func = nn.CrossEntropyLoss()
-        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-        for epoch in tqdm.tqdm(range(epochs)):
-            for batch_index, (images, labels) in enumerate(data):
-                images = images.to(device)
-                labels = labels.to(device)
-                optimizer.zero_grad()
-                outputs = model.forward_pass(images)
-                loss = loss_func(outputs, labels)
-                loss.backward()
-                optimizer.step()
-        return
-
-def validation():
+def train(model, data, learning_rate, epochs, device, val_loader):
+    loss_func = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    for epoch in tqdm.tqdm(range(epochs)):
+        for batch_index, (images, labels) in enumerate(data):
+            images = images.to(device)
+            labels = labels.to(device)
+            optimizer.zero_grad()
+            outputs = model.forward_pass(images)
+            loss = loss_func(outputs, labels)
+            loss.backward()
+            optimizer.step()
+        val_acc = validate(model, val_loader, device)
+        print(f"Epoch {epoch+1}/{epochs}, Validation Accuracy: {val_acc:.2f}%")
     return
+
+def validate(model, val_loader, device):
+    model.eval()
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for images, labels in val_loader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model.forward_pass(images)
+            _, predicted = torch.max(outputs, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+    return 100 * correct / total
 
 def test():
     return
@@ -79,7 +89,7 @@ def main():
 
     model = CNN()
     model = model.to(device)
-    train(model, trainloader, learning_rate, epochs, device)
+    train(model, trainloader, learning_rate, epochs, device, valloader)
 
     return
 
