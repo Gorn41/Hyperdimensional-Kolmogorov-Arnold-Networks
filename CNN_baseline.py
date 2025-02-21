@@ -139,7 +139,64 @@ def test(model, testloader, device):
     with open("./cnn_baseline_classification_report_no_noise.txt", 'a', newline='') as file:
         file.write(f'Test Accuracy: {100 * correct / total:.2f}%, Test Loss: {test_loss}')
         file.write(classification_report(all_labels, all_preds)) 
+
+    print("done")
     return
+
+
+
+def test_with_noise(model, testloader, device, noise_std=0.1):
+    model.eval()
+    correct = 0
+    total = 0
+    total_loss = 0
+    loss_func = nn.CrossEntropyLoss()
+    all_preds = []
+    all_labels = []
+    
+    with torch.no_grad():
+        for images, labels in testloader:
+            images, labels = images.to(device), labels.to(device)
+            
+            # Add Gaussian noise
+            noise = torch.randn_like(images) * noise_std
+            noisy_images = images + noise
+            noisy_images = torch.clamp(noisy_images, 0, 1)  # Keep pixel values in [0,1]
+            
+            outputs = model(noisy_images)
+            _, predicted = torch.max(outputs, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+            loss = loss_func(outputs, labels)
+            total_loss += loss.item() * images.size(0)
+            all_preds.extend(predicted.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+
+    accuracy = 100 * correct / total
+    test_loss = total_loss / len(testloader.dataset)
+    
+    print(f'Test Accuracy with Noise: {accuracy:.2f}%')
+    print(f'Test Loss with Noise: {test_loss}')
+
+    # Confusion Matrix
+    cm = confusion_matrix(all_labels, all_preds)
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
+    plt.xlabel('Predicted')
+    plt.ylabel('Actual')
+    plt.title(f'Confusion Matrix (Noise Std = {noise_std})')
+    plt.savefig(f"./cnn_fashionmnist_confusion_matrix_noise_{noise_std}.png")
+    plt.show()
+
+    # Classification Report
+    print("Classification Report:")
+    print(classification_report(all_labels, all_preds))
+    with open(f"./cnn_baseline_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
+        file.write(f'Test Accuracy: {accuracy:.2f}%, Test Loss: {test_loss}\n')
+        file.write(classification_report(all_labels, all_preds)) 
+
+    return accuracy, test_loss
+
 
 def main():
     batch_sz = 32
@@ -157,16 +214,28 @@ def main():
     other_data = torchvision.datasets.FashionMNIST(root='data', train=False, download=True, transform=transform)
     val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
 
-    trainloader = torch.utils.data.DataLoader(train_data, batch_size=batch_sz, shuffle=True)
-    valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_sz, shuffle=True)
+    # trainloader = torch.utils.data.DataLoader(train_data, batch_size=batch_sz, shuffle=True)
+    # valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_sz, shuffle=True)
     testloader = torch.utils.data.DataLoader(test_data, batch_size=batch_sz)
 
-    model = CNN().to(device)
-    best_model = train(model, trainloader, learning_rate, epochs, device, valloader)
-    test(best_model, testloader, device)
+    # train model
+    # model = CNN().to(device)
+    # best_model = train(model, trainloader, learning_rate, epochs, device, valloader)
+    # test(best_model, testloader, device)
     
-    torch.save(best_model.state_dict(), "models/cnn_baseline_fashion_MNIST.pth")
-    print("Model saved as models/cnn_baseline_fashion_MNIST.pth")
+    # torch.save(best_model.state_dict(), "models/cnn_baseline_fashion_MNIST.pth")
+    # print("Model saved as models/cnn_baseline_fashion_MNIST.pth")
+
+    # test saved model with noise
+    model = CNN().to(device)
+    model.load_state_dict(torch.load("models/cnn_baseline_fashion_MNIST.pth", map_location=torch.device('cpu')))
+    print("hi")
+    test(model, testloader, device)
+    print("hi")
+    test_with_noise(model, testloader, device, noise_std=0.1)
+    test_with_noise(model, testloader, device, noise_std=0.4)
+    test_with_noise(model, testloader, device, noise_std=0.7)
+    test_with_noise(model, testloader, device, noise_std=1.0)
 
 if __name__ == '__main__':
     main()
