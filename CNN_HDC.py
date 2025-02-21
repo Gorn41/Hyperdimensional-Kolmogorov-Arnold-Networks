@@ -13,13 +13,13 @@ class CNN(nn.Module):
         self.conv_layer1 = nn.Conv2d(1, 3, 3)  # Input: (1, 28, 28) -> Output: (3, 26, 26)
         self.max_pool1 = nn.MaxPool2d(2, 2)  # Output: (3, 13, 13)
         self.conv_layer2 = nn.Conv2d(3, 6, 3)  # Output: (6, 11, 11)
-        self.conv_layer3 = nn.Conv2d(6, 2, 3)  # Output: (2, 9, 9)
+        self.conv_layer3 = nn.Conv2d(6, 1, 3)  # Output: (2, 9, 9)
+        k = 1 # output channel size of final conv layer
+        self.hdc_modules = hdc_model(1000 * k, 9)
 
-        self.hdc_modules = hdc_model(1000, 9)
-
-        self.fc1 = nn.Linear(2 * 1000, 20000)  # Adjusted to match output size
+        self.fc1 = nn.Linear(1000, 3000)  # Adjusted to match output size
         self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(20000, 10)  # 10 classes for FashionMNIST
+        self.fc2 = nn.Linear(3000, 10)  # 10 classes for FashionMNIST
 
     def forward(self, x):
         x = self.conv_layer1(x)
@@ -41,10 +41,10 @@ def train(model, data, learning_rate, epochs, device, val_loader):
     best_cnn = None
     loss_func = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
+    batch_size = len(data)
     for epoch in tqdm.tqdm(range(epochs)):
         model.train()
-        for batch_index, (images, labels) in enumerate(data):
+        for batch_index, (images, labels) in (enumerate(tqdm.tqdm(data, total=batch_size))):
             images = images.to(device)
             labels = labels.to(device)
             optimizer.zero_grad()
@@ -95,8 +95,8 @@ def main():
         torchvision.transforms.Normalize((0.1307,), (0.3081,))
     ])
 
-    train_data = torchvision.datasets.MNIST(root='data', train=True, download=True, transform=transform)
-    other_data = torchvision.datasets.MNIST(root='data', train=False, download=True, transform=transform)
+    train_data = torchvision.datasets.FashionMNIST(root='data', train=True, download=True, transform=transform)
+    other_data = torchvision.datasets.FashionMNIST(root='data', train=False, download=True, transform=transform)
     val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
 
     trainloader = torch.utils.data.DataLoader(train_data, batch_size=batch_sz, shuffle=True)

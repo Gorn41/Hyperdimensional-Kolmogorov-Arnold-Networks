@@ -70,8 +70,7 @@ class hdc_model:
             for j in range(channels):
                 tensor2D = tensor3D[j, :, :]
                 hv = self.imagehv(tensor2D)
-                hv = torch.tensor(hv.float())
-                pre_concat.append(hv)
+                pre_concat.append(hv.float())
             post = torch.cat(pre_concat)
             res[i] = post
         return res
