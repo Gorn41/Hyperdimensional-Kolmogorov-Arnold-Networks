@@ -86,7 +86,7 @@ def main():
 
     transform = torchvision.transforms.Compose([
         torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize((0.5,), (0.5,))
+        torchvision.transforms.Normalize((0.1307,), (0.3081,))
     ])
 
     train_data = torchvision.datasets.FashionMNIST(root='data', train=True, download=True, transform=transform)
