@@ -79,7 +79,7 @@ class hdc_model:
         # also try linear coords for 2d channel then concatenate
         # also try bundling/binding all three channels after doing linear coords on 2d
         # send HDC model to device
-
+        # try n-gram encoding
 
 # tensor1 = torch.tensor([1, 2, 3, 4, 5])
 # tensor2 = torch.tensor([1, 5, 5, 5, 5])

@@ -27,7 +27,9 @@ class KANC_MLP(nn.Module):
 
         self.pool1 = nn.MaxPool2d(kernel_size=(2, 2))
         self.flat = nn.Flatten()
-        self.linear1 = nn.Linear(125, 10)
+        self.linear1 = nn.Linear(125, 500)
+        self.relu = nn.ReLU()
+        self.linear2 = nn.Linear(500, 10)
         self.name = f"KANC MLP (Small) (gs = {grid_size})"
 
 
@@ -38,7 +40,8 @@ class KANC_MLP(nn.Module):
         x = self.pool1(x)
         x = self.flat(x)
         x = self.linear1(x)
-        x = F.log_softmax(x, dim=1)
+        x = self.relu(x)
+        x = self.linear2(x)
         return x
 
 def train(model, data, learning_rate, epochs, device, val_loader):
