@@ -197,7 +197,7 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def main(trainingmode=False):
+def main(trainingmode=True):
     batch_sz = 32
     epochs = 10
     learning_rate = 0.001
@@ -223,10 +223,10 @@ def main(trainingmode=False):
         best_model = train(model, trainloader, learning_rate, epochs, device, valloader)
         test(best_model, testloader, device)
         
-        torch.save(best_model.state_dict(), "models/cnn_globalpooling_fashion_MNIST.pth")
+        torch.save(best_model.state_dict(), "models/cnn_global_pooling_fashion_MNIST.pth")
         print("Model saved as models/cnn_globalpooling_fashion_MNIST.pth")
     # test saved model with noise
-    model.load_state_dict(torch.load("models/cnn_global_pooling_fashion_MNIST.pth", map_location=torch.device('cuda')))
+    model.load_state_dict(torch.load("models/cnn_global_pooling_fashion_MNIST.pth", map_location=torch.device('cpu')))
     test(model, testloader, device)
     test_with_noise(model, testloader, device, noise_std=0.1)
     test_with_noise(model, testloader, device, noise_std=0.4)
