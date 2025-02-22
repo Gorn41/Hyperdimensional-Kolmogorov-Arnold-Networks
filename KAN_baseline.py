@@ -239,11 +239,11 @@ def main(trainingmode=True):
         best_model = train(model, trainloader, learning_rate, epochs, device, valloader)
         test(best_model, testloader, device)
 
-        torch.save(model.state_dict(), "KANC_MLP.pth")
-        print("Model saved as KANC_MLP.pth")
+        torch.save(model.state_dict(), "models/KANC_MLP.pth")
+        print("Model saved as models/KANC_MLP.pth")
 
     # test saved model with noise
-    model.load_state_dict(torch.load("KANC_MLP.pth", map_location=device))
+    model.load_state_dict(torch.load("models/KANC_MLP.pth", map_location=device))
     test(model, testloader, device)
     test_with_noise(model, testloader, device, noise_std=0.1)
     test_with_noise(model, testloader, device, noise_std=0.4)
