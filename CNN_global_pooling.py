@@ -197,39 +197,37 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def main(trainingmode==True):
+def main(trainingmode=False):
+    batch_sz = 32
+    epochs = 10
+    learning_rate = 0.001
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    transform = torchvision.transforms.Compose([
+        torchvision.transforms.ToTensor(),
+        torchvision.transforms.Normalize((0.1307,), (0.3081,))
+    ])
+
+    train_data = torchvision.datasets.FashionMNIST(root='data', train=True, download=True, transform=transform)
+    other_data = torchvision.datasets.FashionMNIST(root='data', train=False, download=True, transform=transform)
+    val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
+
+    trainloader = torch.utils.data.DataLoader(train_data, batch_size=batch_sz, shuffle=True)
+    valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_sz, shuffle=True)
+    testloader = torch.utils.data.DataLoader(test_data, batch_size=batch_sz)
+
+    model = CNN_GP().to(device)
+    
     if trainingmode:
-        batch_sz = 32
-        epochs = 10
-        learning_rate = 0.001
-
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        transform = torchvision.transforms.Compose([
-            torchvision.transforms.ToTensor(),
-            torchvision.transforms.Normalize((0.1307,), (0.3081,))
-        ])
-
-        train_data = torchvision.datasets.FashionMNIST(root='data', train=True, download=True, transform=transform)
-        other_data = torchvision.datasets.FashionMNIST(root='data', train=False, download=True, transform=transform)
-        val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
-
-        trainloader = torch.utils.data.DataLoader(train_data, batch_size=batch_sz, shuffle=True)
-        valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_sz, shuffle=True)
-        testloader = torch.utils.data.DataLoader(test_data, batch_size=batch_sz)
-
-        model = CNN_GP().to(device)
         best_model = train(model, trainloader, learning_rate, epochs, device, valloader)
         test(best_model, testloader, device)
         
         torch.save(best_model.state_dict(), "models/cnn_globalpooling_fashion_MNIST.pth")
         print("Model saved as models/cnn_globalpooling_fashion_MNIST.pth")
     # test saved model with noise
-    model = CNN_GP().to(device)
-    model.load_state_dict(torch.load("models/cnn_baseline_fashion_MNIST.pth", map_location=torch.device('cuda')))
-    print("hi")
+    model.load_state_dict(torch.load("models/cnn_global_pooling_fashion_MNIST.pth", map_location=torch.device('cuda')))
     test(model, testloader, device)
-    print("hi")
     test_with_noise(model, testloader, device, noise_std=0.1)
     test_with_noise(model, testloader, device, noise_std=0.4)
     test_with_noise(model, testloader, device, noise_std=0.7)
