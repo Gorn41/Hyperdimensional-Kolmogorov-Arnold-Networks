@@ -197,7 +197,7 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
-    plt.title(f'Confusion Matrix (Noise Std = {noise_std})')
+    plt.title(f'KANC baseline Confusion Matrix (Noise Std = {noise_std})')
     plt.savefig(f"./KANC_baseline_fashionmnist_confusion_matrix_noise_{noise_std}.png")
     plt.show()
 
@@ -210,7 +210,7 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def main(trainingmode==True):
+def main(trainingmode=True):
     if trainingmode:
         batch_sz = 32
         epochs = 10
