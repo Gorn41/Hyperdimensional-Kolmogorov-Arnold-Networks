@@ -224,7 +224,7 @@ def main(trainingmode=True):
         test(best_model, testloader, device)
         
         torch.save(best_model.state_dict(), "models/cnn_global_pooling_fashion_MNIST.pth")
-        print("Model saved as models/cnn_globalpooling_fashion_MNIST.pth")
+        print("Model saved as models/cnn_global_pooling_fashion_MNIST.pth")
     # test saved model with noise
     model.load_state_dict(torch.load("models/cnn_global_pooling_fashion_MNIST.pth", map_location=torch.device('cpu')))
     test(model, testloader, device)

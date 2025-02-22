@@ -14,10 +14,10 @@ class CNN(nn.Module):
         super(CNN, self).__init__()
         #change architecture to match the others
 
-        self.conv_layer1 = nn.Conv2d(1, 3, 3)  # Input: (1, 28, 28) -> Output: (3, 26, 26)
+        self.conv_layer1 = nn.Conv2d(1, 5, 3)  # Input: (1, 28, 28) -> Output: (3, 26, 26)
         self.max_pool1 = nn.MaxPool2d(2, 2)  # Output: (3, 13, 13)
-        self.conv_layer2 = nn.Conv2d(3, 6, 3)  # Output: (6, 11, 11)
-        self.conv_layer3 = nn.Conv2d(6, 1, 3)  # Output: (2, 9, 9)
+        self.conv_layer2 = nn.Conv2d(5, 5, 3)  # Output: (6, 11, 11)
+        self.conv_layer3 = nn.Conv2d(5, 1, 3)  # Output: (2, 9, 9)
         k = 1 # output channel size of final conv layer
         self.hdc_modules = hdc_model(500 * k, 9)
 
@@ -230,7 +230,7 @@ def main(trainingmode=True):
         print("Model saved as models/cnn_hdc_fashion_MNIST.pth")
     # test saved model with noise
     model = CNN().to(device)
-    model.load_state_dict(torch.load("models/cnn_baseline_fashion_MNIST.pth", map_location=torch.device('cuda')))
+    model.load_state_dict(torch.load("models/cnn_hdc_fashion_MNIST.pth", map_location=torch.device('cuda')))
     print("hi")
     test(model, testloader, device)
     print("hi")

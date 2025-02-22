@@ -9,6 +9,7 @@ import copy
 import numpy as np
 from sklearn.metrics import confusion_matrix, classification_report
 import seaborn as sns
+from HDC import hdc_model
 
 class KANC_MLP(nn.Module):
     def __init__(self,grid_size: int = 5):
@@ -26,17 +27,18 @@ class KANC_MLP(nn.Module):
         )
 
         self.conv3 = KAN_Convolutional_Layer(in_channels=5,
-            out_channels= 2,
+            out_channels= 1,
             kernel_size = (3,3),
             grid_size = grid_size
         )
 
         self.pool1 = nn.MaxPool2d(kernel_size=(2, 2))
-        self.flat = nn.Flatten()
+        k = 1 # output channel size of final conv layer
+        self.hdc_modules = hdc_model(500 * k, 9)
         self.linear1 = nn.Linear(162, 500)
         self.relu = nn.ReLU()
         self.linear2 = nn.Linear(500, 10)
-        self.name = f"KANC MLP (Small) (gs = {grid_size})"
+        self.name = f"KANC HDC (Small) (gs = {grid_size})"
 
 
     def forward(self, x):
@@ -85,20 +87,20 @@ def train(model, data, learning_rate, epochs, device, val_loader):
         plt.plot(np.arange(1, epoch + 2), accs)
         plt.xlabel("Epoch")
         plt.ylabel("Validation Accuracy")
-        plt.title("KANC Baseline Validatation Accuracy over Epochs")
-        plt.savefig("./kanc_fashionmnist_val_acc.png")
+        plt.title("HDC KANC Validatation Accuracy over Epochs")
+        plt.savefig("./hdckanc_fashionmnist_val_acc.png")
         plt.figure()
         plt.plot(np.arange(1, epoch + 2), losses)
         plt.xlabel("Epoch")
         plt.ylabel("Training Loss")
-        plt.title("KANC Baseline Training Loss over Epochs")
-        plt.savefig("./kanc_fashionmnist_training_loss.png")
+        plt.title("HDC KANC Baseline Training Loss over Epochs")
+        plt.savefig("./hdckanc_fashionmnist_training_loss.png")
         plt.figure()
         plt.plot(np.arange(1, epoch + 2), val_losses)
         plt.xlabel("Epoch")
         plt.ylabel("Validation Loss")
-        plt.title("KANC Baseline Validatation Loss over Epochs")
-        plt.savefig("./kanc_fashionmnist_val_loss.png")
+        plt.title("HDC KANC Baseline Validatation Loss over Epochs")
+        plt.savefig("./hdckanc_fashionmnist_val_loss.png")
         plt.close('all')
     return best_cnn
 
@@ -147,13 +149,13 @@ def test(model, testloader, device):
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
-    plt.title('KANC Baseline Confusion Matrix (No Noise)')
-    plt.savefig("./kanc_fashionmnist_confusion_matrix_no_noise.png")
+    plt.title('HDC KANC Confusion Matrix (No Noise)')
+    plt.savefig("./hdckanc_fashionmnist_confusion_matrix_no_noise.png")
     plt.show()
 
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open("./KANC_classification_report_no_noise.txt", 'a', newline='') as file:
+    with open("./HDCKANC_classification_report_no_noise.txt", 'a', newline='') as file:
         file.write(f'Test Accuracy: {100 * correct / total:.2f}%, Test Loss: {test_loss}')
         file.write(classification_report(all_labels, all_preds))   
     return
@@ -197,14 +199,14 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
-    plt.title(f'KANC baseline Confusion Matrix (Noise Std = {noise_std})')
-    plt.savefig(f"./KANC_baseline_fashionmnist_confusion_matrix_noise_{noise_std}.png")
+    plt.title(f'HDC KANC Confusion Matrix (Noise Std = {noise_std})')
+    plt.savefig(f"./HDCKANC_baseline_fashionmnist_confusion_matrix_noise_{noise_std}.png")
     plt.show()
 
     # Classification Report
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open(f"./KANC_baseline_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
+    with open(f"./HDCKANC_baseline_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
         file.write(f'Test Accuracy: {accuracy:.2f}%, Test Loss: {test_loss}\n')
         file.write(classification_report(all_labels, all_preds)) 
 
@@ -234,12 +236,12 @@ def main(trainingmode=True):
         best_model = train(model, trainloader, learning_rate, epochs, device, valloader)
         test(best_model, testloader, device)
 
-        torch.save(model.state_dict(), "models/KANC_MLP.pth")
-        print("Model saved as models/KANC_MLP.pth")
+        torch.save(model.state_dict(), "models/hdckanc_fashion_MNIST.pth")
+        print("Model saved as models/hdckanc_fashion_MNIST.pth")
 
     # test saved model with noise
     model = KANC_MLP().to(device)
-    model.load_state_dict(torch.load("models/KANC_MLP.pth", map_location=torch.device('cuda')))
+    model.load_state_dict(torch.load("models/hdckanc_fashion_MNIST.pth", map_location=torch.device('cuda')))
     print("hi")
     test(model, testloader, device)
     print("hi")
