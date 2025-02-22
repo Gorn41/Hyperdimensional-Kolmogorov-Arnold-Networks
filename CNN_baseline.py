@@ -16,7 +16,7 @@ class CNN(nn.Module):
         self.conv_layer2 = nn.Conv2d(5, 5, 3)  # Output: (6, 11, 11)
         self.conv_layer3 = nn.Conv2d(5, 2, 3)  # Output: (6, 11, 11)
         self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(50, 500)  # Adjusted to match output size
+        self.fc1 = nn.Linear(162, 500)  # Adjusted to match output size
         self.relu = nn.ReLU()
         self.fc2 = nn.Linear(500, 10)  # 10 classes for FashionMNIST
 
@@ -24,7 +24,6 @@ class CNN(nn.Module):
         x = self.conv_layer1(x)
         x = self.max_pool1(x)
         x = self.conv_layer2(x)
-        x = self.max_pool1(x)
         x = self.conv_layer3(x)
         x = self.flatten(x)
         x = self.fc1(x)
@@ -199,37 +198,39 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
     return accuracy, test_loss
 
 
-def main():
-    batch_sz = 32
-    epochs = 10
-    learning_rate = 0.001
+def main(trainingmode=True):
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if trainingmode:
+        batch_sz = 32
+        epochs = 10
+        learning_rate = 0.001
 
-    transform = torchvision.transforms.Compose([
-        torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize((0.1307,), (0.3081,))
-    ])
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    train_data = torchvision.datasets.FashionMNIST(root='data', train=True, download=True, transform=transform)
-    other_data = torchvision.datasets.FashionMNIST(root='data', train=False, download=True, transform=transform)
-    val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
+        transform = torchvision.transforms.Compose([
+            torchvision.transforms.ToTensor(),
+            torchvision.transforms.Normalize((0.1307,), (0.3081,))
+        ])
 
-    # trainloader = torch.utils.data.DataLoader(train_data, batch_size=batch_sz, shuffle=True)
-    # valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_sz, shuffle=True)
-    testloader = torch.utils.data.DataLoader(test_data, batch_size=batch_sz)
+        train_data = torchvision.datasets.FashionMNIST(root='data', train=True, download=True, transform=transform)
+        other_data = torchvision.datasets.FashionMNIST(root='data', train=False, download=True, transform=transform)
+        val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
 
-    # train model
-    # model = CNN().to(device)
-    # best_model = train(model, trainloader, learning_rate, epochs, device, valloader)
-    # test(best_model, testloader, device)
-    
-    # torch.save(best_model.state_dict(), "models/cnn_baseline_fashion_MNIST.pth")
-    # print("Model saved as models/cnn_baseline_fashion_MNIST.pth")
+        trainloader = torch.utils.data.DataLoader(train_data, batch_size=batch_sz, shuffle=True)
+        valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_sz, shuffle=True)
+        testloader = torch.utils.data.DataLoader(test_data, batch_size=batch_sz)
+
+        # train model
+        model = CNN().to(device)
+        best_model = train(model, trainloader, learning_rate, epochs, device, valloader)
+        test(best_model, testloader, device)
+        
+        torch.save(best_model.state_dict(), "models/cnn_baseline_fashion_MNIST.pth")
+        print("Model saved as models/cnn_baseline_fashion_MNIST.pth")
 
     # test saved model with noise
     model = CNN().to(device)
-    model.load_state_dict(torch.load("models/cnn_baseline_fashion_MNIST.pth", map_location=torch.device('cpu')))
+    model.load_state_dict(torch.load("models/cnn_baseline_fashion_MNIST.pth", map_location=torch.device('cuda')))
     print("hi")
     test(model, testloader, device)
     print("hi")
