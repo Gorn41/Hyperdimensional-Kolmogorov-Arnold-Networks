@@ -32,7 +32,6 @@ class KANC_MLP(nn.Module):
         )
 
         self.pool1 = nn.MaxPool2d(kernel_size=(2, 2))
-        self.global_avg_pool = nn.AdaptiveAvgPool2d((1, 1))  # GMP instead of Flatten()
         self.flat = nn.Flatten()
         self.linear1 = nn.Linear(162, 500)
         self.relu = nn.ReLU()
@@ -45,7 +44,6 @@ class KANC_MLP(nn.Module):
         x = self.pool1(x)
         x = self.conv2(x)
         x = self.conv3(x)
-        x = self.global_avg_pool(x)
         x = self.flat(x)
         x = self.linear1(x)
         x = self.relu(x)
@@ -87,20 +85,20 @@ def train(model, data, learning_rate, epochs, device, val_loader):
         plt.plot(np.arange(1, epoch + 2), accs)
         plt.xlabel("Epoch")
         plt.ylabel("Validation Accuracy")
-        plt.title("KANC Global Pooling Validatation Accuracy over Epochs")
-        plt.savefig("./kanc_globalpooling_fashionmnist_val_acc.png")
+        plt.title("KANC Baseline Validatation Accuracy over Epochs")
+        plt.savefig("./kanc_baseline_fashionmnist_val_acc.png")
         plt.figure()
         plt.plot(np.arange(1, epoch + 2), losses)
         plt.xlabel("Epoch")
         plt.ylabel("Training Loss")
-        plt.title("KANC Global Pooling Training Loss over Epochs")
-        plt.savefig("./kanc_globalpooling_fashionmnist_training_loss.png")
+        plt.title("KANC Baseline Training Loss over Epochs")
+        plt.savefig("./kanc_baseline_fashionmnist_training_loss.png")
         plt.figure()
         plt.plot(np.arange(1, epoch + 2), val_losses)
         plt.xlabel("Epoch")
         plt.ylabel("Validation Loss")
-        plt.title("KANC Global Pooling Validatation Loss over Epochs")
-        plt.savefig("./kanc_globalpooling_fashionmnist_val_loss.png")
+        plt.title("KANC Baseline Validatation Loss over Epochs")
+        plt.savefig("./kanc_baseline_fashionmnist_val_loss.png")
         plt.close('all')
     return best_cnn
 
@@ -149,13 +147,13 @@ def test(model, testloader, device):
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
-    plt.title('KANC Global Pooling Confusion Matrix (No Noise)')
-    plt.savefig("./kanc_globalpooling_fashionmnist_confusion_matrix_no_noise.png")
+    plt.title('KANC Baseline Confusion Matrix (No Noise)')
+    plt.savefig("./kanc_baseline_fashionmnist_confusion_matrix_no_noise.png")
     plt.show()
 
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open("./KANC_globalpooling_classification_report_no_noise.txt", 'a', newline='') as file:
+    with open("./KANC_baseline_classification_report_no_noise.txt", 'a', newline='') as file:
         file.write(f'Test Accuracy: {100 * correct / total:.2f}%, Test Loss: {test_loss}')
         file.write(classification_report(all_labels, all_preds))
     return
@@ -199,14 +197,14 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
-    plt.title(f'KANC Global Pooling Confusion Matrix (Noise Std = {noise_std})')
-    plt.savefig(f"./KANC_globalpooling_fashionmnist_confusion_matrix_noise_{noise_std}.png")
+    plt.title(f'KANC Baseline Confusion Matrix (Noise Std = {noise_std})')
+    plt.savefig(f"./KANC_baseline_fashionmnist_confusion_matrix_noise_{noise_std}.png")
     plt.show()
 
     # Classification Report
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open(f"./KANC_globalpooling_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
+    with open(f"./KANC_baseline_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
         # clear file
         file.truncate(0)
         file.write(f'Test Accuracy: {accuracy:.2f}%, Test Loss: {test_loss}\n')
