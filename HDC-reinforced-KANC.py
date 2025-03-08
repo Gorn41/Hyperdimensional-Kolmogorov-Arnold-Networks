@@ -10,6 +10,80 @@ import numpy as np
 from sklearn.metrics import confusion_matrix, classification_report
 import seaborn as sns
 import csv
+import pandas as pd
+import torchhd
+
+class hdc_linear_layer2:
+    def __init__(self, hvsize, roundingdp, numclasses):
+        self.hvsize = hvsize
+        self.codebook = {}
+        self.numclasses = numclasses
+        self.class_hvs = torch.empty((self.numclasses, self.hvsize), dtype=torch.bool)
+        self.roundingdp = roundingdp
+        data = pd.read_csv("fashionmnist_KANCbaseline_activations.csv")
+        training_data = data.loc[:, "linearlayer1_neuron_0":"linearlayer2_max_index"]
+        self.training_groups = {}
+        for i in range(self.numclasses):
+            self.training_groups[i] = np.round(training_data[training_data["linearlayer2_max_index"] == i].iloc[:, :-1], self.roundingdp)
+
+    def set(self, symbol):
+        self.codebook[symbol] = torchhd.BSCTensor.random(1, self.hvsize, dtype=torch.long)
+        return
+
+    def get(self, symbol):
+        return self.codebook[symbol]
+    
+    def process_row(self, row):
+        n_features = row.shape[0]
+        res = torch.empty((n_features, self.hvsize), dtype=torch.bool)
+        for i in range(n_features):
+            value = row.iloc[i]
+            if value not in self.codebook:
+                    self.set(value)
+            value_hv = self.get(value)
+            for k in range(i):
+                value_hv = torchhd.permute(value_hv)
+            res[i] = value_hv
+        return torchhd.multibundle(res)
+
+    def train(self):
+        for i in tqdm.tqdm(range(self.numclasses)):
+            n_examples = self.training_groups[i].shape[0]
+            res = torch.empty((n_examples, self.hvsize), dtype=torch.bool)
+            res_idx = 0
+            for _, row in tqdm.tqdm(self.training_groups[i].iterrows()):
+                res[res_idx] = self.process_row(row)
+                res_idx += 1
+            self.class_hvs[i] = torchhd.multibundle(res)
+        return
+
+    def hdc_forward(self, x):
+        x = np.round(pd.DataFrame(x), self.roundingdp)
+        res = torch.empty((x.shape[0], self.numclasses), dtype=torch.int)
+        res_idx = 0
+        for _, row in x.iterrows():
+            activation_hv = self.process_row(row)
+            # if error convert MAPTensor to normal tensor
+            res[res_idx] = torchhd.hamming_similarity(activation_hv, self.class_hvs)
+            res_idx += 1
+        return res
+    
+    def save_codebook(self):
+        with open("HDC-reinforced-KANC-codebook-FC2.csv", "w", newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(self.codebook.keys())
+            writer.writerow(self.codebook.values())
+        return
+    
+    def save_class_hvs(self):
+        pd.DataFrame(self.class_hvs).to_csv('HDC-reinforced-KANC-Class-HVs-FC2.csv', index=False, header=False)
+        return
+    
+    def save_model(self):
+        self.save_codebook()
+        self.save_class_hvs()
+        return
+
 
 class KANC_MLP(nn.Module):
     def __init__(self,grid_size: int = 5):
@@ -38,6 +112,9 @@ class KANC_MLP(nn.Module):
         self.relu = nn.ReLU()
         self.linearlayer2 = nn.Linear(500, 10)
         self.name = f"KANC MLP (Small) (gs = {grid_size})"
+        self.hdc_clf = hdc_linear_layer2(10000, 2, 10)
+        self.hdc_clf.train()
+        self.hdc_clf.save_model()
 
 
     def forward(self, x):
@@ -47,77 +124,9 @@ class KANC_MLP(nn.Module):
         x = self.conv3(x)
         x = self.flat(x)
         x = self.relu(self.linearlayer1(x))
-        x = self.linearlayer2(x)
+        x = self.hdc_clf.hdc_forward(x)
         return x
-
-def train(model, data, learning_rate, epochs, device, val_loader):
-    accs = []
-    val_losses = []
-    losses = []
-    best_acc = 0
-    loss_func = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    batch_size = len(data)
-    for epoch in tqdm.tqdm(range(epochs)):
-        total_loss = 0
-        for batch_index, (images, labels) in (enumerate(tqdm.tqdm(data, total=batch_size))):
-            images = images.to(device)
-            labels = labels.to(device)
-            optimizer.zero_grad()
-            outputs = model.forward(images)
-            loss = loss_func(outputs, labels)
-            total_loss += loss.item() * images.size(0)
-            loss.backward()
-            optimizer.step()
-        losses.append(total_loss / len(data.dataset))
-        val_data = validate(model, val_loader, loss_func, device)
-        val_acc = val_data[0]
-        accs.append(val_acc)
-        val_losses.append(val_data[1])
-
-        if val_acc > best_acc:
-            best_acc = val_acc
-            best_cnn = copy.deepcopy(model)
-
-        print(f"Epoch {epoch+1}/{epochs}, Validation Accuracy: {val_acc:.2f}%")
-
-        plt.figure()
-        plt.plot(np.arange(1, epoch + 2), accs)
-        plt.xlabel("Epoch")
-        plt.ylabel("Validation Accuracy")
-        plt.title("KANC Baseline Validatation Accuracy over Epochs")
-        plt.savefig("./kanc_baseline_fashionmnist_val_acc.png")
-        plt.figure()
-        plt.plot(np.arange(1, epoch + 2), losses)
-        plt.xlabel("Epoch")
-        plt.ylabel("Training Loss")
-        plt.title("KANC Baseline Training Loss over Epochs")
-        plt.savefig("./kanc_baseline_fashionmnist_training_loss.png")
-        plt.figure()
-        plt.plot(np.arange(1, epoch + 2), val_losses)
-        plt.xlabel("Epoch")
-        plt.ylabel("Validation Loss")
-        plt.title("KANC Baseline Validatation Loss over Epochs")
-        plt.savefig("./kanc_baseline_fashionmnist_val_loss.png")
-        plt.close('all')
-    return best_cnn
-
-def validate(model, val_loader, loss_func, device):
-    model.eval()
-    correct = 0
-    total = 0
-    total_loss = 0
-    with torch.no_grad():
-        for images, labels in val_loader:
-            images, labels = images.to(device), labels.to(device)
-            outputs = model.forward(images)
-            _, predicted = torch.max(outputs, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-            loss = loss_func(outputs, labels)
-            total_loss += loss.item() * images.size(0)
-    return (100 * correct / total, total_loss / len(val_loader.dataset))
-
+    
 def test(model, testloader, device):
     model.eval()
     correct = 0
@@ -147,13 +156,13 @@ def test(model, testloader, device):
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
-    plt.title('KANC Baseline Confusion Matrix (No Noise)')
-    plt.savefig("./kanc_baseline_fashionmnist_confusion_matrix_no_noise.png")
+    plt.title('HDC-reinforced-KANC Confusion Matrix (No Noise)')
+    plt.savefig("./HDC-reinforced-KANC_fashionmnist_confusion_matrix_no_noise.png")
     plt.show()
 
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open("./KANC_baseline_classification_report_no_noise.txt", 'a', newline='') as file:
+    with open("./HDC-reinforced-KANC_classification_report_no_noise.txt", 'a', newline='') as file:
         file.write(f'Test Accuracy: {100 * correct / total:.2f}%, Test Loss: {test_loss}')
         file.write(classification_report(all_labels, all_preds))
     return
@@ -197,14 +206,14 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
-    plt.title(f'KANC Baseline Confusion Matrix (Noise Std = {noise_std})')
-    plt.savefig(f"./KANC_baseline_fashionmnist_confusion_matrix_noise_{noise_std}.png")
+    plt.title(f'HDC-reinforced-KANC Confusion Matrix (Noise Std = {noise_std})')
+    plt.savefig(f"./HDC-reinforced-KANC_fashionmnist_confusion_matrix_noise_{noise_std}.png")
     plt.show()
 
     # Classification Report
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open(f"./KANC_baseline_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
+    with open(f"./HDC-reinforced-KANC_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
         # clear file
         file.truncate(0)
         file.write(f'Test Accuracy: {accuracy:.2f}%, Test Loss: {test_loss}\n')
@@ -248,69 +257,7 @@ def main(trainingmode=False):
     test_with_noise(model, testloader, device, noise_std=0.7)
     test_with_noise(model, testloader, device, noise_std=1.0)
 
-    model.eval()
-    activations = {}
-    hooks = []
-    def capture_activation(name):
-        def hook(module, input, output):
-            activations[name] = output.detach().numpy()
-        return hook
-
-    for name, layer in model.named_children():
-        # if you want all conv layers change conv3 below to just conv
-        if name.startswith('conv3') or name.startswith('linearlayer'):
-            hooks.append(layer.register_forward_hook(capture_activation(name)))
-
-    headers = []
-    for name, layer in model.named_children():
-        if name.startswith('conv'):
-            # if name == 'conv1':
-            #     n_features = 26 * 26 * 5
-            #     headers += [f"{name}_neuron_{i}" for i in range(n_features)]
-            # if name == 'conv2':
-            #     n_features = 11 * 11 * 5
-            #     headers += [f"{name}_neuron_{i}" for i in range(n_features)]
-            if name == 'conv3':
-                n_features = 9 * 9 * 2
-                headers.extend([f"{name}_neuron_{i}" for i in range(n_features)])
-        if name.startswith('linearlayer'):
-            if name == 'linearlayer2':
-                headers.append(f"{name}_max_index")  # Single header for max index
-            else:
-                headers.extend([f"{name}_neuron_{i}" for i in range(layer.out_features)])
-
-    headers.append("true label")
-        
-    with open('fashionmnist_KANCbaseline_activations.csv', 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(headers)
-
-        for images, labels in trainloader:
-            images = images.to(device)
-            labels = labels.to(device)
-            print(type(labels))
-            print(labels.shape)
-            with torch.no_grad():
-                model.forward(images)
-
-            batch_size = images.size(0)
-            for i in range(batch_size):
-                row = []
-                # row.extend(activations['conv1'][i].flatten())
-                # row.extend(activations['conv2'][i].flatten())
-                row.extend(activations['conv3'][i].flatten())
-                row.extend(activations['linearlayer1'][i].flatten())
-                linearlayer2_output = activations['linearlayer2'][i]
-                max_idx = linearlayer2_output.argmax()
-                row.append(max_idx)
-                row.append
-                writer.writerow(row)
-
-            activations.clear() 
-
-    for hook in hooks:
-        hook.remove()
-    return
+    
 
 if __name__ == '__main__':
     main()

@@ -6,7 +6,7 @@ import torchhd
 
 class hdc_model:
 
-    def __init__(self, hvsize, dims):
+    def __init__(self, hvsize, dims=28):
         self.hvsize = hvsize
         self.dims = dims
         self.codebook = {}

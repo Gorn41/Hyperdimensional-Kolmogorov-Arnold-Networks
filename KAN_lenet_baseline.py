@@ -9,35 +9,28 @@ import copy
 import numpy as np
 from sklearn.metrics import confusion_matrix, classification_report
 import seaborn as sns
-import csv
 
-class KANC_MLP(nn.Module):
+class KANCLeNet_MLP(nn.Module):
     def __init__(self,grid_size: int = 5):
         super().__init__()
         self.conv1 = KAN_Convolutional_Layer(in_channels=1,
-            out_channels= 5,
-            kernel_size= (3,3),
+            out_channels= 6,
+            kernel_size= (5,5),
             grid_size = grid_size
         )
 
-        self.conv2 = KAN_Convolutional_Layer(in_channels=5,
-            out_channels= 5,
-            kernel_size = (3,3),
+        self.conv2 = KAN_Convolutional_Layer(in_channels=6,
+            out_channels= 16,
+            kernel_size = (5,5),
             grid_size = grid_size
         )
 
-        self.conv3 = KAN_Convolutional_Layer(in_channels=5,
-            out_channels= 2,
-            kernel_size = (3,3),
-            grid_size = grid_size
-        )
-
-        self.pool1 = nn.MaxPool2d(kernel_size=(2, 2))
         self.flat = nn.Flatten()
-        self.linearlayer1 = nn.Linear(162, 500)
+        self.fc1 = nn.Linear(256, 120)
         self.relu = nn.ReLU()
-        self.linearlayer2 = nn.Linear(500, 10)
-        self.name = f"KANC MLP (Small) (gs = {grid_size})"
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 10)
+        self.name = f"KANC lenet MLP (Small) (gs = {grid_size})"
 
 
     def forward(self, x):
@@ -46,8 +39,9 @@ class KANC_MLP(nn.Module):
         x = self.conv2(x)
         x = self.conv3(x)
         x = self.flat(x)
-        x = self.relu(self.linearlayer1(x))
-        x = self.linearlayer2(x)
+        x = self.linear1(x)
+        x = self.relu(x)
+        x = self.linear2(x)
         return x
 
 def train(model, data, learning_rate, epochs, device, val_loader):
@@ -85,20 +79,20 @@ def train(model, data, learning_rate, epochs, device, val_loader):
         plt.plot(np.arange(1, epoch + 2), accs)
         plt.xlabel("Epoch")
         plt.ylabel("Validation Accuracy")
-        plt.title("KANC Baseline Validatation Accuracy over Epochs")
-        plt.savefig("./kanc_baseline_fashionmnist_val_acc.png")
+        plt.title("KANC LeNet Baseline Validatation Accuracy over Epochs")
+        plt.savefig("./kanclenet_baseline_fashionmnist_val_acc.png")
         plt.figure()
         plt.plot(np.arange(1, epoch + 2), losses)
         plt.xlabel("Epoch")
         plt.ylabel("Training Loss")
-        plt.title("KANC Baseline Training Loss over Epochs")
-        plt.savefig("./kanc_baseline_fashionmnist_training_loss.png")
+        plt.title("KANC LeNet Baseline Training Loss over Epochs")
+        plt.savefig("./kanclenet_baseline_fashionmnist_training_loss.png")
         plt.figure()
         plt.plot(np.arange(1, epoch + 2), val_losses)
         plt.xlabel("Epoch")
         plt.ylabel("Validation Loss")
-        plt.title("KANC Baseline Validatation Loss over Epochs")
-        plt.savefig("./kanc_baseline_fashionmnist_val_loss.png")
+        plt.title("KANC LeNet Baseline Validatation Loss over Epochs")
+        plt.savefig("./kanclenet_baseline_fashionmnist_val_loss.png")
         plt.close('all')
     return best_cnn
 
@@ -147,13 +141,13 @@ def test(model, testloader, device):
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
-    plt.title('KANC Baseline Confusion Matrix (No Noise)')
-    plt.savefig("./kanc_baseline_fashionmnist_confusion_matrix_no_noise.png")
+    plt.title('KANC LeNet Baseline Confusion Matrix (No Noise)')
+    plt.savefig("./kanclenet_baseline_fashionmnist_confusion_matrix_no_noise.png")
     plt.show()
 
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open("./KANC_baseline_classification_report_no_noise.txt", 'a', newline='') as file:
+    with open("./KANClenet_baseline_classification_report_no_noise.txt", 'a', newline='') as file:
         file.write(f'Test Accuracy: {100 * correct / total:.2f}%, Test Loss: {test_loss}')
         file.write(classification_report(all_labels, all_preds))
     return
@@ -197,14 +191,14 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
-    plt.title(f'KANC Baseline Confusion Matrix (Noise Std = {noise_std})')
-    plt.savefig(f"./KANC_baseline_fashionmnist_confusion_matrix_noise_{noise_std}.png")
+    plt.title(f'KANC LeNet Baseline Confusion Matrix (Noise Std = {noise_std})')
+    plt.savefig(f"./KANClenet_baseline_fashionmnist_confusion_matrix_noise_{noise_std}.png")
     plt.show()
 
     # Classification Report
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open(f"./KANC_baseline_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
+    with open(f"./KANClenet_baseline_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
         # clear file
         file.truncate(0)
         file.write(f'Test Accuracy: {accuracy:.2f}%, Test Loss: {test_loss}\n')
@@ -212,7 +206,7 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def main(trainingmode=False):
+def main(trainingmode=True):
 
     batch_sz = 32
     epochs = 10
@@ -231,85 +225,22 @@ def main(trainingmode=False):
     valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_sz, shuffle=True)
     testloader = torch.utils.data.DataLoader(test_data, batch_size=batch_sz)
 
-    model = KANC_MLP().to(device)
+    model = KANCLeNet_MLP().to(device)
 
     if trainingmode:
         best_model = train(model, trainloader, learning_rate, epochs, device, valloader)
         test(best_model, testloader, device)
 
-        torch.save(model.state_dict(), "models/KANC_MLP.pth")
-        print("Model saved as models/KANC_MLP.pth")
+        torch.save(model.state_dict(), "models/KANCLeNet_MLP.pth")
+        print("Model saved as models/KANCLeNet_MLP.pth")
 
     # test saved model with noise
-    model.load_state_dict(torch.load("models/KANC_MLP.pth", map_location=device))
+    model.load_state_dict(torch.load("models/KANCLeNet_MLP.pth", map_location=device))
     test(model, testloader, device)
     test_with_noise(model, testloader, device, noise_std=0.1)
     test_with_noise(model, testloader, device, noise_std=0.4)
     test_with_noise(model, testloader, device, noise_std=0.7)
     test_with_noise(model, testloader, device, noise_std=1.0)
-
-    model.eval()
-    activations = {}
-    hooks = []
-    def capture_activation(name):
-        def hook(module, input, output):
-            activations[name] = output.detach().numpy()
-        return hook
-
-    for name, layer in model.named_children():
-        # if you want all conv layers change conv3 below to just conv
-        if name.startswith('conv3') or name.startswith('linearlayer'):
-            hooks.append(layer.register_forward_hook(capture_activation(name)))
-
-    headers = []
-    for name, layer in model.named_children():
-        if name.startswith('conv'):
-            # if name == 'conv1':
-            #     n_features = 26 * 26 * 5
-            #     headers += [f"{name}_neuron_{i}" for i in range(n_features)]
-            # if name == 'conv2':
-            #     n_features = 11 * 11 * 5
-            #     headers += [f"{name}_neuron_{i}" for i in range(n_features)]
-            if name == 'conv3':
-                n_features = 9 * 9 * 2
-                headers.extend([f"{name}_neuron_{i}" for i in range(n_features)])
-        if name.startswith('linearlayer'):
-            if name == 'linearlayer2':
-                headers.append(f"{name}_max_index")  # Single header for max index
-            else:
-                headers.extend([f"{name}_neuron_{i}" for i in range(layer.out_features)])
-
-    headers.append("true label")
-        
-    with open('fashionmnist_KANCbaseline_activations.csv', 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(headers)
-
-        for images, labels in trainloader:
-            images = images.to(device)
-            labels = labels.to(device)
-            print(type(labels))
-            print(labels.shape)
-            with torch.no_grad():
-                model.forward(images)
-
-            batch_size = images.size(0)
-            for i in range(batch_size):
-                row = []
-                # row.extend(activations['conv1'][i].flatten())
-                # row.extend(activations['conv2'][i].flatten())
-                row.extend(activations['conv3'][i].flatten())
-                row.extend(activations['linearlayer1'][i].flatten())
-                linearlayer2_output = activations['linearlayer2'][i]
-                max_idx = linearlayer2_output.argmax()
-                row.append(max_idx)
-                row.append
-                writer.writerow(row)
-
-            activations.clear() 
-
-    for hook in hooks:
-        hook.remove()
     return
 
 if __name__ == '__main__':
