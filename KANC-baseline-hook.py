@@ -288,7 +288,7 @@ def main(trainingmode=False):
             else:
                 headers.extend([f"{name}_neuron_{i}" for i in range(layer.out_features)])
 
-    headers.append("true label")
+    headers.append("true_label")
         
     with open('fashionmnist_KANCbaseline_activations.csv', 'w', newline='') as f:
         writer = csv.writer(f)
@@ -305,8 +305,6 @@ def main(trainingmode=False):
             batch_size = images.size(0)
             for i in range(batch_size):
                 row = []
-                # row.extend(activations['conv1'][i].flatten())
-                # row.extend(activations['conv2'][i].flatten())
                 row.extend(activations['conv3'][i].flatten())
                 row.extend(activations['linearlayer1'][i].flatten())
                 linearlayer2_output = activations['linearlayer2'][i]
