@@ -212,7 +212,7 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def main(trainingmode=False):
+def main(trainingmode=True):
 
     batch_sz = 32
     epochs = 10
@@ -235,6 +235,8 @@ def main(trainingmode=False):
     testloader = torch.utils.data.DataLoader(test_data, batch_size=batch_sz)
 
     model = KANC_MLP().to(device)
+    print(model.state_dict().keys())
+
 
     if trainingmode:
         best_model = train(model, trainloader, learning_rate, epochs, device, valloader)
@@ -244,7 +246,11 @@ def main(trainingmode=False):
         print("Model saved as models/KANC_MLP.pth")
 
     # test saved model with noise
-    model.load_state_dict(torch.load("models/KANC_MLP.pth", map_location=device))
+    model_state_dict = torch.load("models/KANC_MLP.pth", map_location=device)
+    print(model_state_dict.keys())
+    # model.load_state_dict(torch.load("models/KANC_MLP.pth", map_location=device))
+    # print(model.keys())
+
     test(model, testloader, device)
     test_with_noise(model, testloader, device, noise_std=0.1)
     test_with_noise(model, testloader, device, noise_std=0.4)
