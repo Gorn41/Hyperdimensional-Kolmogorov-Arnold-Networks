@@ -316,9 +316,9 @@ def main(trainingmode=False):
                 writer.writerow(row)
 
             activations.clear() 
-
     for hook in hooks:
         hook.remove()
+
     return
 
 if __name__ == '__main__':

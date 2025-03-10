@@ -24,7 +24,7 @@ class hdc_linear_layer2:
         training_data = data.loc[:, "linearlayer1_neuron_0":"linearlayer2_max_index"]
         self.training_groups = {}
         for i in range(self.numclasses):
-            self.training_groups[i] = np.round(training_data[training_data["true_label"] == i].iloc[:, :-1], self.roundingdp)
+            self.training_groups[i] = np.round(training_data[training_data["true label"] == i].iloc[:, :-1], self.roundingdp)
 
     def set(self, symbol):
         self.codebook[symbol] = torchhd.BSCTensor.random(1, self.hvsize, dtype=torch.long)
