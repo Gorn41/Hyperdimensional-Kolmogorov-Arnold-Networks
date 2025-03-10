@@ -212,7 +212,7 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def main(trainingmode=True):
+def main(trainingmode=False):
 
     batch_sz = 32
     epochs = 10
@@ -262,7 +262,7 @@ def main(trainingmode=True):
     hooks = []
     def capture_activation(name):
         def hook(module, input, output):
-            activations[name] = output.detach().numpy()
+            activations[name] = output.detach().cpu.numpy()
         return hook
 
     for name, layer in model.named_children():
