@@ -21,10 +21,12 @@ class hdc_linear_layer2:
         self.class_hvs = torch.empty((self.numclasses, self.hvsize), dtype=torch.bool)
         self.roundingdp = roundingdp
         data = pd.read_csv("fashionmnist_KANCbaseline_activations.csv")
-        training_data = data.loc[:, "linearlayer1_neuron_0":"linearlayer2_max_index"]
+        # change this to include only all activations of target layer and activations of next layer/or true label
+        training_data = data.loc[:, "linearlayer1_neuron_0":"true_label"]
+        training_data = training_data.drop("linearlayer2_max_index", axis=1)
         self.training_groups = {}
         for i in range(self.numclasses):
-            self.training_groups[i] = np.round(training_data[training_data["linearlayer2_max_index"] == i].iloc[:, :-1], self.roundingdp)
+            self.training_groups[i] = np.round(training_data[training_data["true_label"] == i].iloc[:, :-1], self.roundingdp)
 
     def set(self, symbol):
         self.codebook[symbol] = torchhd.BSCTensor.random(1, self.hvsize, dtype=torch.long)
@@ -85,7 +87,7 @@ class hdc_linear_layer2:
         return
 
 
-class KANC_MLP(nn.Module):
+class KANC_HDC(nn.Module):
     def __init__(self,grid_size: int = 5):
         super().__init__()
         self.conv1 = KAN_Convolutional_Layer(in_channels=1,
@@ -221,11 +223,10 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def main(trainingmode=False):
-
+def main():
     batch_sz = 32
-    epochs = 10
-    learning_rate = 0.001
+    # epochs = 10
+    # learning_rate = 0.001
 
     device = torch.device("cpu")
     if torch.cuda.is_available():
@@ -236,21 +237,20 @@ def main(trainingmode=False):
     other_data = torchvision.datasets.FashionMNIST(root='data', train=False, download=True, transform=transform)
     val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
 
-    trainloader = torch.utils.data.DataLoader(train_data, batch_size=batch_sz, shuffle=True)
-    valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_sz, shuffle=True)
+    # trainloader = torch.utils.data.DataLoader(train_data, batch_size=batch_sz, shuffle=True)
+    # valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_sz, shuffle=True)
     testloader = torch.utils.data.DataLoader(test_data, batch_size=batch_sz)
 
-    model = KANC_MLP().to(device)
+    # load in the original KANC-MLP model weights but make the forward function realy one those, but at the end it should be sent to the HDC linear layer 2?
+    model = KANC_HDC().to(device)
 
-    if trainingmode:
-        best_model = train(model, trainloader, learning_rate, epochs, device, valloader)
-        test(best_model, testloader, device)
-
-        torch.save(model.state_dict(), "models/KANC_MLP.pth")
-        print("Model saved as models/KANC_MLP.pth")
-
-    # test saved model with noise
     model.load_state_dict(torch.load("models/KANC_MLP.pth", map_location=device))
+    # model = KANC_HDC().to(device)
+
+    # # test saved model with noise
+    # model.load_state_dict(torch.load("models/KANC_MLP.pth", map_location=device))
+
+
     test(model, testloader, device)
     test_with_noise(model, testloader, device, noise_std=0.1)
     test_with_noise(model, testloader, device, noise_std=0.4)
