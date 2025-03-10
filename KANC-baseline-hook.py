@@ -212,7 +212,7 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def main(trainingmode=False):
+def main(trainingmode=True):
 
     batch_sz = 32
     epochs = 10
@@ -303,7 +303,7 @@ def main(trainingmode=False):
                 linearlayer2_output = activations['linearlayer2'][i]
                 max_idx = linearlayer2_output.argmax()
                 row.append(max_idx)
-                row.append
+                row.append(labels[i].item()) # True label
                 writer.writerow(row)
 
             activations.clear() 
