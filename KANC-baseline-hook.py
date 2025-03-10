@@ -225,7 +225,10 @@ def main(trainingmode=True):
     transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(), torchvision.transforms.Normalize((0.1307,), (0.3081,))])
     train_data = torchvision.datasets.FashionMNIST(root='data', train=True, download=True, transform=transform)
     other_data = torchvision.datasets.FashionMNIST(root='data', train=False, download=True, transform=transform)
-    val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
+    dataset_size = len(other_data)
+    split1 = dataset_size // 2 
+    split2 = dataset_size - split1 
+    val_data, test_data = torch.utils.data.random_split(other_data, [split1, split2])
 
     trainloader = torch.utils.data.DataLoader(train_data, batch_size=batch_sz, shuffle=True)
     valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_sz, shuffle=True)
