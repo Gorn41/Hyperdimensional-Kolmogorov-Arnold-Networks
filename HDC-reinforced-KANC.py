@@ -14,12 +14,13 @@ import pandas as pd
 import torchhd
 
 class hdc_linear_layer2:
-    def __init__(self, hvsize, roundingdp, numclasses):
+    def __init__(self, hvsize, roundingdp, numclasses, num_activations):
         self.hvsize = hvsize
         self.codebook = {}
         self.numclasses = numclasses
-        self.class_hvs = torch.empty((self.numclasses, self.hvsize), dtype=torch.bool)
+        self.class_hvs = torch.empty((self.numclasses, self.hvsize), dtype=torch.int)
         self.roundingdp = roundingdp
+        self.num_activations = num_activations
         data = pd.read_csv("fashionmnist_KANCbaseline_activations.csv")
         # change this to include only all activations of target layer and activations of next layer/or true label
         training_data = data.loc[:, "linearlayer1_neuron_0":"true_label"]
@@ -27,9 +28,10 @@ class hdc_linear_layer2:
         self.training_groups = {}
         for i in range(self.numclasses):
             self.training_groups[i] = np.round(training_data[training_data["true_label"] == i].iloc[:, :-1], self.roundingdp)
+        
 
     def set(self, symbol):
-        self.codebook[symbol] = torchhd.BSCTensor.random(1, self.hvsize, dtype=torch.long)
+        self.codebook[symbol] = torchhd.BSCTensor.random(1, self.hvsize)
         return
 
     def get(self, symbol):
@@ -37,37 +39,49 @@ class hdc_linear_layer2:
     
     def process_row(self, row):
         n_features = row.shape[0]
-        res = torch.empty((n_features, self.hvsize), dtype=torch.bool)
+        res = torch.empty((n_features, self.hvsize), dtype=torch.float)
         for i in range(n_features):
             value = row.iloc[i]
             if value not in self.codebook:
                     self.set(value)
-            value_hv = self.get(value)
-            for k in range(i):
-                value_hv = torchhd.permute(value_hv)
-            res[i] = value_hv
-        return torchhd.multibundle(res)
+            res[i] = self.get(value)
+        return res
 
     def train(self):
         for i in tqdm.tqdm(range(self.numclasses)):
             n_examples = self.training_groups[i].shape[0]
-            res = torch.empty((n_examples, self.hvsize), dtype=torch.bool)
+            res = torch.empty((n_examples, self.num_activations, self.hvsize), dtype=torch.float)
             res_idx = 0
             for _, row in tqdm.tqdm(self.training_groups[i].iterrows()):
                 res[res_idx] = self.process_row(row)
                 res_idx += 1
-            self.class_hvs[i] = torchhd.multibundle(res)
+            for j in self.num_activations:
+                res[:, j, :] = torchhd.permute(res[:, j, :], shifts=j)
+            res = torch.mean(res, axis=1)
+            rounded_tensor = torch.round(res)
+            half_values = (res == 0.5)
+            random_choices = torch.bernoulli(torch.ones_like(res[half_values], dtype=torch.float32) * 0.5).int()
+            rounded_tensor[half_values] = random_choices
+            self.class_hvs[i] = torchhd.multibundle(rounded_tensor)
         return
 
     def hdc_forward(self, x):
         x = np.round(pd.DataFrame(x), self.roundingdp)
-        res = torch.empty((x.shape[0], self.numclasses), dtype=torch.int)
-        res_idx = 0
+        # res = torch.empty((x.shape[0], self.numclasses), dtype=torch.int)
+        inputhvs = torch.empty((x.shape[0], self.num_activations, self.hvsize), dtype=torch.float)
+        input_idx = 0
         for _, row in x.iterrows():
-            activation_hv = self.process_row(row)
+            inputhvs[input_idx] = self.process_row(row)
             # if error convert MAPTensor to normal tensor
-            res[res_idx] = torchhd.hamming_similarity(activation_hv, self.class_hvs)
-            res_idx += 1
+            input_idx += 1
+        for j in self.num_activations:
+            inputhvs[:, j, :] = torchhd.permute(inputhvs[:, j, :], shifts=j)
+        inputhvs = torch.mean(inputhvs, axis=1)
+        rounded_tensor = torch.round(inputhvs)
+        half_values = (inputhvs == 0.5)
+        random_choices = torch.bernoulli(torch.ones_like(inputhvs[half_values], dtype=torch.float) * 0.5).int()
+        rounded_tensor[half_values] = random_choices
+        res = torchhd.hamming_similarity(rounded_tensor.int(), self.class_hvs)
         return res
     
     def save_codebook(self):
@@ -114,7 +128,7 @@ class KANC_HDC(nn.Module):
         self.relu = nn.ReLU()
         self.linearlayer2 = nn.Linear(500, 10)
         self.name = f"KANC MLP (Small) (gs = {grid_size})"
-        self.hdc_clf = hdc_linear_layer2(10000, 2, 10)
+        self.hdc_clf = hdc_linear_layer2(10000, 2, 10, 500)
         self.hdc_clf.train()
         self.hdc_clf.save_model()
 
