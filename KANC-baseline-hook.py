@@ -215,7 +215,7 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
 def main(trainingmode=True):
 
     batch_sz = 32
-    epochs = 10
+    epochs = 1
     learning_rate = 0.001
 
     device = torch.device("cpu")
