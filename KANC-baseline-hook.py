@@ -262,7 +262,7 @@ def main(trainingmode=False):
     hooks = []
     def capture_activation(name):
         def hook(module, input, output):
-            activations[name] = output.detach().cpu.numpy()
+            activations[name] = output.detach().cpu().numpy()
         return hook
 
     for name, layer in model.named_children():
