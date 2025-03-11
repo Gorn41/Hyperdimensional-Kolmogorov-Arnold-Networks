@@ -100,19 +100,19 @@ def train(model, data, learning_rate, epochs, device, val_loader):
         plt.xlabel("Epoch")
         plt.ylabel("Validation Accuracy")
         plt.title("KANC Baseline Validatation Accuracy over Epochs")
-        plt.savefig("./kanc_baseline_cifar10_val_acc.png")
+        plt.savefig("./kanc_baseline_svhn_val_acc.png")
         plt.figure()
         plt.plot(np.arange(1, epoch + 2), losses)
         plt.xlabel("Epoch")
         plt.ylabel("Training Loss")
         plt.title("KANC Baseline Training Loss over Epochs")
-        plt.savefig("./kanc_baseline_cifar10_training_loss.png")
+        plt.savefig("./kanc_baseline_svhn_training_loss.png")
         plt.figure()
         plt.plot(np.arange(1, epoch + 2), val_losses)
         plt.xlabel("Epoch")
         plt.ylabel("Validation Loss")
         plt.title("KANC Baseline Validatation Loss over Epochs")
-        plt.savefig("./kanc_baseline_cifar10_val_loss.png")
+        plt.savefig("./kanc_baseline_svhn_val_loss.png")
         plt.close('all')
     return best_cnn
 
@@ -162,12 +162,12 @@ def test(model, testloader, device):
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
     plt.title('KANC Baseline Confusion Matrix (No Noise)')
-    plt.savefig("./kanc_baseline_cifar10_confusion_matrix_no_noise.png")
+    plt.savefig("./kanc_baseline_svhn_confusion_matrix_no_noise.png")
     plt.show()
 
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open("./KANC_baseline_cifar10_classification_report_no_noise.txt", 'a', newline='') as file:
+    with open("./KANC_baseline_svhn_classification_report_no_noise.txt", 'a', newline='') as file:
         file.write(f'Test Accuracy: {100 * correct / total:.2f}%, Test Loss: {test_loss}')
         file.write(classification_report(all_labels, all_preds))
     return
@@ -212,13 +212,13 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
     plt.title(f'KANC Baseline Confusion Matrix (Noise Std = {noise_std})')
-    plt.savefig(f"./KANC_baseline_cifar10_confusion_matrix_noise_{noise_std}.png")
+    plt.savefig(f"./KANC_baseline_svhn_confusion_matrix_noise_{noise_std}.png")
     plt.show()
 
     # Classification Report
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open(f"./KANC_baseline_cifar10_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
+    with open(f"./KANC_baseline_svhn_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
         # clear file
         file.truncate(0)
         file.write(f'Test Accuracy: {accuracy:.2f}%, Test Loss: {test_loss}\n')
@@ -227,7 +227,6 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
     return accuracy, test_loss
 
 def main(trainingmode=True):
-
     batch_sz = 32
     epochs = 10
     learning_rate = 0.001
@@ -236,9 +235,12 @@ def main(trainingmode=True):
     if torch.cuda.is_available():
         device = torch.device("cuda")
 
-    transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(), torchvision.transforms.Normalize( (0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261))])  # CIFAR-10 normalization
-    train_data = torchvision.datasets.CIFAR10(root='data', train=True, download=True, transform=transform)
-    other_data = torchvision.datasets.CIFAR10(root='data', train=False, download=True, transform=transform)
+    # Use SVHN dataset instead of CIFAR-10
+    transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(), 
+                                                torchvision.transforms.Normalize((0.4377, 0.4438, 0.4728), (0.1980, 0.2010, 0.1970))])  # SVHN normalization values
+    train_data = torchvision.datasets.SVHN(root='data', split='train', download=True, transform=transform)
+    other_data = torchvision.datasets.SVHN(root='data', split='test', download=True, transform=transform)
+
     dataset_size = len(other_data)
     split1 = dataset_size // 2
     split2 = dataset_size - split1
@@ -255,12 +257,12 @@ def main(trainingmode=True):
         best_model = train(model, trainloader, learning_rate, epochs, device, valloader)
         test(best_model, testloader, device)
 
-        model_save_path = "models/cifar10_KANC_MLP.pth"  # Save path specific to CIFAR-10
+        model_save_path = "models/svhn_KANC_MLP.pth"  # Save path specific to SVHN
         torch.save(best_model.state_dict(), model_save_path)
         print(f"Model saved as {model_save_path}")
 
     # Test saved model with noise
-    model_state_dict = torch.load("models/cifar10_KANC_MLP.pth", map_location=device)
+    model_state_dict = torch.load("models/svhn_KANC_MLP.pth", map_location=device)
     model.load_state_dict(model_state_dict)
 
     test(model, testloader, device)
@@ -295,7 +297,7 @@ def main(trainingmode=True):
 
     headers.append("true_label")
         
-    with open('cifar10_KANCbaseline_activations.csv', 'w', newline='') as f:  # Update CSV name to reflect CIFAR-10
+    with open('svhn_KANCbaseline_activations.csv', 'w', newline='') as f:  # Update CSV name to reflect SVHN
         writer = csv.writer(f)
         writer.writerow(headers)
 
@@ -321,6 +323,7 @@ def main(trainingmode=True):
         hook.remove()
 
     return
+
 
 if __name__ == '__main__':
     main()
