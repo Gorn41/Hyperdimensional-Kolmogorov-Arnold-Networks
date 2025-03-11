@@ -154,6 +154,8 @@ def test(model, testloader, device):
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
     with open("./KANC_baseline_classification_report_no_noise.txt", 'a', newline='') as file:
+        # clear file
+        file.truncate(0)
         file.write(f'Test Accuracy: {100 * correct / total:.2f}%, Test Loss: {test_loss}')
         file.write(classification_report(all_labels, all_preds))
     return
