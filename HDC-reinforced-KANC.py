@@ -26,7 +26,7 @@ class hdc_linear_layer2:
         training_data = data.loc[:, "linearlayer1_neuron_0":"true_label"]
         training_data = training_data.drop("linearlayer2_max_index", axis=1)
         # uncomment below to test subset of data for debugging
-        # training_data = training_data[:-59500]
+        training_data = training_data[:-59500]
         self.training_groups = {}
         for i in range(self.numclasses):
             self.training_groups[i] = np.round(training_data[training_data["true_label"] == i].iloc[:, :-1], self.roundingdp)
