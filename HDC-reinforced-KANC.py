@@ -19,7 +19,7 @@ class hdc_linear_layer2:
         self.hvsize = hvsize
         self.codebook = {}
         self.numclasses = numclasses
-        self.class_hvs = torch.empty((self.numclasses, self.hvsize), dtype=torch.int)
+        self.class_hvs = torch.empty((self.numclasses, self.hvsize), dtype=torch.int).to('cuda')
         self.roundingdp = roundingdp
         self.num_activations = num_activations
         data = pd.read_csv("fashionmnist_KANCbaseline_activations.csv")
@@ -27,15 +27,15 @@ class hdc_linear_layer2:
         training_data = data.loc[:, "linearlayer1_neuron_0":"true_label"]
         training_data = training_data.drop("linearlayer2_max_index", axis=1)
         # uncomment below to test subset of data for debugging
-        training_data = training_data[:-20000]
+        # training_data = training_data[:-59500]
         self.training_groups = {}
         for i in range(self.numclasses):
-            self.training_groups[i] = torch.round(torch.tensor(training_data[training_data["true_label"] == int(i)].iloc[:, :-1].to_numpy()), decimals=self.roundingdp)
-            print(self.training_groups[i])
+            self.training_groups[i] = torch.round(torch.tensor(training_data[training_data["true_label"] == int(i)].iloc[:, :-1].to_numpy()), decimals=self.roundingdp).to('cuda')
+
         
 
     def set(self, symbol):
-        self.codebook[symbol] = torchhd.BSCTensor.random(1, self.hvsize)
+        self.codebook[symbol] = torchhd.BSCTensor.random(1, self.hvsize).to('cuda')
         return
 
     def get(self, symbol):
@@ -43,57 +43,64 @@ class hdc_linear_layer2:
     
     def process_row(self, row):
         n_features = row.shape[0]
-        res = torch.empty((n_features, self.hvsize), dtype=torch.float)
+        res = torch.empty((n_features, self.hvsize), dtype=torch.float).to('cuda')
         for i in range(n_features):
-            value = row[i]
+            value = row[i].item()
             if value not in self.codebook:
                     self.set(value)
             res[i] = self.get(value)
         return res
 
-    def train(self):
+    def trainhdc(self):
         for i in tqdm.tqdm(range(self.numclasses)):
             n_examples = self.training_groups[i].shape[0]
-            res = torch.empty((n_examples, self.num_activations, self.hvsize), dtype=torch.float)
+            res = torch.empty((n_examples, self.num_activations, self.hvsize), dtype=torch.float).to('cuda')
             for k in tqdm.tqdm(range(self.training_groups[i].shape[0])):
                 res[k] = self.process_row(self.training_groups[i][k])
-            print(res)
             for j in range(self.num_activations):
                 res[:, j, :] = torchhd.permute(res[:, j, :], shifts=j)
-            res = torch.mean(res, axis=1)
+            res = torch.mean(res.float(), axis=1)
             rounded_tensor = torch.round(res)
+            # print(rounded_tensor)
             half_values = (res == 0.5)
-            random_choices = torch.bernoulli(torch.ones_like(res[half_values], dtype=torch.float32) * 0.5).int()
+            random_choices = torch.bernoulli(torch.ones_like(res[half_values], dtype=torch.float32) * 0.5).to('cuda').int()
             rounded_tensor[half_values] = random_choices.float()
-            self.class_hvs[i] = torchhd.multibundle(rounded_tensor)
+
+            self.class_hvs[i] = torchhd.multibundle(torchhd.BSCTensor(rounded_tensor.int()).to('cuda'))
+            # put .int in forward too
+            print(self.class_hvs[i])
         return
 
     def hdc_forward(self, x):
-        x = torch.round(d, decimals=self.roundingdp)
+        x = torch.round(x, decimals=self.roundingdp)
         # res = torch.empty((x.shape[0], self.numclasses), dtype=torch.int)
-        inputhvs = torch.empty((x.shape[0], self.num_activations, self.hvsize), dtype=torch.float)
-        for k in tqdm.tqdm(range(x.shape[0])):
+        inputhvs = torch.empty((x.shape[0], self.num_activations, self.hvsize), dtype=torch.float).to('cuda')
+        for k in range(x.shape[0]):
             inputhvs[k] = self.process_row(x[k])
             # if error convert MAPTensor to normal tensor
         for j in range(self.num_activations):
             inputhvs[:, j, :] = torchhd.permute(inputhvs[:, j, :], shifts=j)
-        inputhvs = torch.mean(inputhvs, axis=1)
+        inputhvs = torch.mean(inputhvs.float(), axis=1)
         rounded_tensor = torch.round(inputhvs)
         half_values = (inputhvs == 0.5)
-        random_choices = torch.bernoulli(torch.ones_like(inputhvs[half_values], dtype=torch.float) * 0.5).int()
-        rounded_tensor[half_values] = random_choices
-        res = torchhd.hamming_similarity(rounded_tensor.int(), self.class_hvs)
+        random_choices = torch.bernoulli(torch.ones_like(inputhvs[half_values], dtype=torch.float) * 0.5).to('cuda').int()
+        rounded_tensor[half_values] = random_choices.float()
+        res = torchhd.hamming_similarity(torchhd.BSCTensor(rounded_tensor.int()).to('cuda'), self.class_hvs)
         return res
     
     def save_codebook(self):
         with open("HDC-reinforced-KANC-codebook-FC2.csv", "w", newline='') as file:
             writer = csv.writer(file)
             writer.writerow(self.codebook.keys())
-            writer.writerow(self.codebook.values())
+            val_row = []
+            for val in self.codebook.values():
+                val_row.append(val.tolist()[0])
+            writer.writerow(val_row)
+            # remember to call torchhd.BSCTensor() on each list when loading saved codebook
         return
     
     def save_class_hvs(self):
-        pd.DataFrame(self.class_hvs).to_csv('HDC-reinforced-KANC-Class-HVs-FC2.csv', index=False, header=False)
+        pd.DataFrame(self.class_hvs.detach().cpu()).to_csv('HDC-reinforced-KANC-Class-HVs-FC2.csv', index=False, header=False)
         return
     
     def save_model(self):
@@ -130,9 +137,10 @@ class KANC_HDC(nn.Module):
         self.linearlayer2 = nn.Linear(200, 10)
         self.name = f"KANC MLP (Small) (gs = {grid_size})"
         self.hdc_clf = hdc_linear_layer2(10000, 2, 10, 200)
+
     
-    def train(self):
-        self.hdc_clf.train()
+    def trainhdclayer(self):
+        self.hdc_clf.trainhdc()
         self.hdc_clf.save_model()
 
 
@@ -156,13 +164,13 @@ def test(model, testloader, device):
     all_preds = []
     all_labels = []
     with torch.no_grad():
-        for images, labels in testloader:
+        for images, labels in tqdm.tqdm(testloader, total=batch_size):
             images, labels = images.to(device), labels.to(device)
             outputs = model(images)
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-            loss = loss_func(outputs, labels)
+            correct += (predicted.to('cuda') == labels).sum().item()
+            loss = loss_func(outputs.float(), labels)
             total_loss += loss.item() * images.size(0)
             all_preds.extend(predicted.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
@@ -262,7 +270,7 @@ def main():
     model = KANC_HDC().to(device)
 
     model.load_state_dict(torch.load("models/KANC_MLP.pth", map_location=device))
-    model.train()
+    model.trainhdclayer()
     # model = KANC_HDC().to(device)
 
     # # test saved model with noise
