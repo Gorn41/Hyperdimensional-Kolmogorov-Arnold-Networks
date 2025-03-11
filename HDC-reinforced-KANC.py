@@ -27,7 +27,7 @@ class hdc_linear_layer2:
         training_data = data.loc[:, "linearlayer1_neuron_0":"true_label"]
         training_data = training_data.drop("linearlayer2_max_index", axis=1)
         # uncomment below to test subset of data for debugging
-        # training_data = training_data[:-59500]
+        training_data = training_data[:-45000]
         self.training_groups = {}
         for i in range(self.numclasses):
             self.training_groups[i] = torch.round(torch.tensor(training_data[training_data["true_label"] == int(i)].iloc[:, :-1].to_numpy()), decimals=self.roundingdp).to('cuda')
@@ -136,7 +136,7 @@ class KANC_HDC(nn.Module):
         self.relu = nn.ReLU()
         self.linearlayer2 = nn.Linear(200, 10)
         self.name = f"KANC MLP (Small) (gs = {grid_size})"
-        self.hdc_clf = hdc_linear_layer2(10000, 2, 10, 200)
+        self.hdc_clf = hdc_linear_layer2(10000, 1, 10, 200)
 
     
     def trainhdclayer(self):
@@ -204,7 +204,7 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
     all_labels = []
 
     with torch.no_grad():
-        for images, labels in testloader:
+        for images, labels in tqdm.tqdm(testloader, total=batch_size):
             images, labels = images.to(device), labels.to(device)
 
             # Add Gaussian noise
@@ -216,7 +216,7 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-            loss = loss_func(outputs, labels)
+            loss = loss_func(outputs.float(), labels)
             total_loss += loss.item() * images.size(0)
             all_preds.extend(predicted.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())

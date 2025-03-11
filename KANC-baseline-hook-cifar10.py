@@ -100,19 +100,19 @@ def train(model, data, learning_rate, epochs, device, val_loader):
         plt.xlabel("Epoch")
         plt.ylabel("Validation Accuracy")
         plt.title("KANC Baseline Validatation Accuracy over Epochs")
-        plt.savefig("./kanc_baseline_fashionmnist_val_acc.png")
+        plt.savefig("./kanc_baseline_cifar10_val_acc.png")
         plt.figure()
         plt.plot(np.arange(1, epoch + 2), losses)
         plt.xlabel("Epoch")
         plt.ylabel("Training Loss")
         plt.title("KANC Baseline Training Loss over Epochs")
-        plt.savefig("./kanc_baseline_fashionmnist_training_loss.png")
+        plt.savefig("./kanc_baseline_cifar10_training_loss.png")
         plt.figure()
         plt.plot(np.arange(1, epoch + 2), val_losses)
         plt.xlabel("Epoch")
         plt.ylabel("Validation Loss")
         plt.title("KANC Baseline Validatation Loss over Epochs")
-        plt.savefig("./kanc_baseline_fashionmnist_val_loss.png")
+        plt.savefig("./kanc_baseline_cifar10_val_loss.png")
         plt.close('all')
     return best_cnn
 
@@ -162,12 +162,12 @@ def test(model, testloader, device):
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
     plt.title('KANC Baseline Confusion Matrix (No Noise)')
-    plt.savefig("./kanc_baseline_fashionmnist_confusion_matrix_no_noise.png")
+    plt.savefig("./kanc_baseline_cifar10_confusion_matrix_no_noise.png")
     plt.show()
 
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open("./KANC_baseline_classification_report_no_noise.txt", 'a', newline='') as file:
+    with open("./KANC_baseline_cifar10_classification_report_no_noise.txt", 'a', newline='') as file:
         file.write(f'Test Accuracy: {100 * correct / total:.2f}%, Test Loss: {test_loss}')
         file.write(classification_report(all_labels, all_preds))
     return
@@ -212,13 +212,13 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
     plt.title(f'KANC Baseline Confusion Matrix (Noise Std = {noise_std})')
-    plt.savefig(f"./KANC_baseline_fashionmnist_confusion_matrix_noise_{noise_std}.png")
+    plt.savefig(f"./KANC_baseline_cifar10_confusion_matrix_noise_{noise_std}.png")
     plt.show()
 
     # Classification Report
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open(f"./KANC_baseline_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
+    with open(f"./KANC_baseline_cifar10_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
         # clear file
         file.truncate(0)
         file.write(f'Test Accuracy: {accuracy:.2f}%, Test Loss: {test_loss}\n')
