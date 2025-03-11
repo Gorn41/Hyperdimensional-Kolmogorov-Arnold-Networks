@@ -18,7 +18,7 @@ class CNN(nn.Module):
         self.conv_layer3 = nn.Conv2d(64, 128, 3, padding=1)
         self.max_pool3 = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(128 * 3 * 3, 256)  # Adjusted for STL-10 image size
+        self.fc1 = nn.Linear(128 * 3 * 3, 256)  # Adjusted for SVHN image size
         self.relu = nn.ReLU()
         self.fc2 = nn.Linear(256, 10)
     
@@ -31,7 +31,7 @@ class CNN(nn.Module):
         x = self.fc2(x)
         return x
 
-MODEL_PATH = "models/cnn_baseline_stl10.pth"
+MODEL_PATH = "models/cnn_baseline_svhn.pth"
 
 def train(model, data, learning_rate, epochs, device, val_loader):
     accs = []
@@ -99,15 +99,12 @@ def main(trainingmode=True):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     transform = torchvision.transforms.Compose([
-    torchvision.transforms.Resize((32, 32)),  
-    torchvision.transforms.ToTensor(),
-    torchvision.transforms.Normalize((0.4467, 0.4398, 0.4066), (0.2241, 0.2215, 0.2239))  # STL-10 mean/std
-])
+        torchvision.transforms.ToTensor(),
+        torchvision.transforms.Normalize(mean=(0.4377, 0.4438, 0.4728), std=(0.1980, 0.2010, 0.1970))  # SVHN mean/std
+    ])
 
-
-
-    train_data = torchvision.datasets.STL10(root='data', split='train', download=True, transform=transform)
-    test_data = torchvision.datasets.STL10(root='data', split='test', download=True, transform=transform)
+    train_data = torchvision.datasets.SVHN(root='data', split='train', download=True, transform=transform)
+    test_data = torchvision.datasets.SVHN(root='data', split='test', download=True, transform=transform)
     trainloader = torch.utils.data.DataLoader(train_data, batch_size=batch_sz, shuffle=True)
     testloader = torch.utils.data.DataLoader(test_data, batch_size=batch_sz)
 
