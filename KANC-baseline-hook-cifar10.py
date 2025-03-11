@@ -39,7 +39,7 @@ class KANC_MLP(nn.Module):
         self._initialize_linear_input_size()
         
         self.relu = nn.ReLU()
-        self.linearlayer2 = nn.Linear(self.linear_input_size, 10)
+        self.linearlayer2 = nn.Linear(500, 10)
         self.name = f"KANC MLP (Small) (gs = {grid_size})"
 
     def _initialize_linear_input_size(self):
