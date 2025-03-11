@@ -22,7 +22,7 @@ class KANC_MLP(nn.Module):
 
         self.conv2 = KAN_Convolutional_Layer(in_channels=5,
             out_channels= 5,
-            kernel_size = (3,3),
+            kernel_size = (5,5),
             grid_size = grid_size
         )
 
@@ -34,9 +34,9 @@ class KANC_MLP(nn.Module):
 
         self.pool1 = nn.MaxPool2d(kernel_size=(2, 2))
         self.flat = nn.Flatten()
-        self.linearlayer1 = nn.Linear(162, 500)
+        self.linearlayer1 = nn.Linear(98, 200)
         self.relu = nn.ReLU()
-        self.linearlayer2 = nn.Linear(500, 10)
+        self.linearlayer2 = nn.Linear(200, 10)
         self.name = f"KANC MLP (Small) (gs = {grid_size})"
 
 

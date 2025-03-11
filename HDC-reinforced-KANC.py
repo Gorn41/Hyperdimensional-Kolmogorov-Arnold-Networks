@@ -25,6 +25,8 @@ class hdc_linear_layer2:
         # change this to include only all activations of target layer and activations of next layer/or true label
         training_data = data.loc[:, "linearlayer1_neuron_0":"true_label"]
         training_data = training_data.drop("linearlayer2_max_index", axis=1)
+        # uncomment below to test subset of data for debugging
+        # training_data = training_data[:-59500]
         self.training_groups = {}
         for i in range(self.numclasses):
             self.training_groups[i] = np.round(training_data[training_data["true_label"] == i].iloc[:, :-1], self.roundingdp)
@@ -112,7 +114,7 @@ class KANC_HDC(nn.Module):
 
         self.conv2 = KAN_Convolutional_Layer(in_channels=5,
             out_channels= 5,
-            kernel_size = (3,3),
+            kernel_size = (5,5),
             grid_size = grid_size
         )
 
@@ -124,11 +126,11 @@ class KANC_HDC(nn.Module):
 
         self.pool1 = nn.MaxPool2d(kernel_size=(2, 2))
         self.flat = nn.Flatten()
-        self.linearlayer1 = nn.Linear(162, 500)
+        self.linearlayer1 = nn.Linear(98, 200)
         self.relu = nn.ReLU()
-        self.linearlayer2 = nn.Linear(500, 10)
+        self.linearlayer2 = nn.Linear(200, 10)
         self.name = f"KANC MLP (Small) (gs = {grid_size})"
-        self.hdc_clf = hdc_linear_layer2(10000, 2, 10, 500)
+        self.hdc_clf = hdc_linear_layer2(10000, 2, 10, 200)
         self.hdc_clf.train()
         self.hdc_clf.save_model()
 
