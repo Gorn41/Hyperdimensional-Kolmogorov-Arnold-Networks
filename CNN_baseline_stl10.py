@@ -99,9 +99,11 @@ def main(trainingmode=True):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     transform = torchvision.transforms.Compose([
-        torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize((0.4467, 0.4398, 0.4066), (0.2241, 0.2215, 0.2239))
-    ])
+    torchvision.transforms.Resize((32, 32)),  
+    torchvision.transforms.ToTensor(),
+    torchvision.transforms.Normalize((0.4467, 0.4398, 0.4066), (0.2241, 0.2215, 0.2239))  # STL-10 mean/std
+])
+
 
 
     train_data = torchvision.datasets.STL10(root='data', split='train', download=True, transform=transform)
