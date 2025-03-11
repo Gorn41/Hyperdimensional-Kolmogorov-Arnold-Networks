@@ -167,7 +167,7 @@ def test(model, testloader, device):
 
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open("./KANC_baseline_classification_report_no_noise.txt", 'a', newline='') as file:
+    with open("./KANC_baseline_cifar10_classification_report_no_noise.txt", 'a', newline='') as file:
         file.write(f'Test Accuracy: {100 * correct / total:.2f}%, Test Loss: {test_loss}')
         file.write(classification_report(all_labels, all_preds))
     return
@@ -218,7 +218,7 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
     # Classification Report
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open(f"./KANC_baseline_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
+    with open(f"./KANC_baseline_cifar10_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
         # clear file
         file.truncate(0)
         file.write(f'Test Accuracy: {accuracy:.2f}%, Test Loss: {test_loss}\n')
