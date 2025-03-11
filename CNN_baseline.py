@@ -32,6 +32,7 @@ class CNN(nn.Module):
         return x
 
 def train(model, data, learning_rate, epochs, device, val_loader):
+    model.train()
     accs = []
     losses = []
     val_losses = []
