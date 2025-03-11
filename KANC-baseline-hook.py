@@ -214,7 +214,7 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def main(trainingmode=False):
+def main(trainingmode=True):
 
     batch_sz = 32
     epochs = 10
