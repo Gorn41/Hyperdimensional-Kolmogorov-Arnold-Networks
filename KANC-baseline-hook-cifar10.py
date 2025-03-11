@@ -14,31 +14,44 @@ import csv
 class KANC_MLP(nn.Module):
     def __init__(self,grid_size: int = 5):
         super().__init__()
-        self.conv1 = KAN_Convolutional_Layer(in_channels=1,
-            out_channels= 5,
-            kernel_size= (3,3),
-            grid_size = grid_size
+        self.conv1 = KAN_Convolutional_Layer(in_channels=3,  # Changed to 3 for CIFAR-10
+            out_channels=5,
+            kernel_size=(3,3),
+            grid_size=grid_size
         )
 
         self.conv2 = KAN_Convolutional_Layer(in_channels=5,
-            out_channels= 5,
-            kernel_size = (3,3),
-            grid_size = grid_size
+            out_channels=5,
+            kernel_size=(3,3),
+            grid_size=grid_size
         )
 
         self.conv3 = KAN_Convolutional_Layer(in_channels=5,
-            out_channels= 2,
-            kernel_size = (3,3),
-            grid_size = grid_size
+            out_channels=2,
+            kernel_size=(3,3),
+            grid_size=grid_size
         )
 
         self.pool1 = nn.MaxPool2d(kernel_size=(2, 2))
         self.flat = nn.Flatten()
-        self.linearlayer1 = nn.Linear(242, 500)
+        
+        # Determine the correct input size for the first linear layer
+        self._initialize_linear_input_size()
+        
         self.relu = nn.ReLU()
         self.linearlayer2 = nn.Linear(500, 10)
         self.name = f"KANC MLP (Small) (gs = {grid_size})"
 
+    def _initialize_linear_input_size(self):
+        with torch.no_grad():
+            dummy_input = torch.zeros(1, 3, 32, 32)  # CIFAR-10 image size
+            dummy_output = self.conv1(dummy_input)
+            dummy_output = self.pool1(dummy_output)
+            dummy_output = self.conv2(dummy_output)
+            dummy_output = self.conv3(dummy_output)
+            dummy_output = self.flat(dummy_output)
+            self.linear_input_size = dummy_output.shape[1]
+        self.linearlayer1 = nn.Linear(self.linear_input_size, 500)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -272,7 +285,7 @@ def main(trainingmode=True):
     for name, layer in model.named_children():
         if name.startswith('conv'):
             if name == 'conv3':
-                n_features = 9 * 9 * 2
+                n_features = 7 * 7 * 2
                 headers.extend([f"{name}_neuron_{i}" for i in range(n_features)])
         if name.startswith('linearlayer'):
             if name == 'linearlayer2':
