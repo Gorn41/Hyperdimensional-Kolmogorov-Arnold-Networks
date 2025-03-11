@@ -55,7 +55,10 @@ class hdc_linear_layer2:
             if value.item() not in self.codebook:
                 self.set(value.item())
             res[i] = self.get(value.item())
-        return torchhd.bind(res)  # Bind all activation hypervectors
+        bound_hv = res[0]
+        for hv in res[1:]:
+            bound_hv = torchhd.bind(bound_hv, hv)
+        return bound_hv
 
     def trainhdc(self):
         """Trains HDC layer by encoding activations into hypervectors and computing class representations"""
