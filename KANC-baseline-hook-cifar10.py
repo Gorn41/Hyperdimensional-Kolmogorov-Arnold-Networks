@@ -40,23 +40,12 @@ class KANC_MLP(nn.Module):
         self.name = f"KANC MLP (Small) (gs = {grid_size})"
 
 
-    # def forward(self, x):
-    #     x = self.conv1(x)
-    #     x = self.pool1(x)
-    #     x = self.conv2(x)
-    #     x = self.conv3(x)
-    #     x = self.flat(x)
-    #     x = self.relu(self.linearlayer1(x))
-    #     x = self.linearlayer2(x)
-    #     return x
     def forward(self, x):
         x = self.conv1(x)
         x = self.pool1(x)
         x = self.conv2(x)
         x = self.conv3(x)
-        print(f"Shape before flattening: {x.shape}")  # Debugging step
         x = self.flat(x)
-        print(f"Shape after flattening: {x.shape}")  # Debugging step
         x = self.relu(self.linearlayer1(x))
         x = self.linearlayer2(x)
         return x
