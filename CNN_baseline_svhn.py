@@ -55,6 +55,8 @@ def train(model, data, learning_rate, epochs, device, val_loader):
     loss_func = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     
+    model.to(device)
+    
     for epoch in range(epochs):
         total_loss = 0
         for images, labels in tqdm.tqdm(data):
