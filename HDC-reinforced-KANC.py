@@ -12,137 +12,99 @@ import seaborn as sns
 import csv
 import pandas as pd
 import torchhd
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 
 class hdc_linear_layer2:
-    
-    def __init__(self, hvsize, roundingdp, numclasses, num_activations):
+    def __init__(self, hvsize, roundingdp, numclasses, num_activations, quantization_bins=16):
         self.hvsize = hvsize
-        self.codebook = {}
         self.numclasses = numclasses
         self.class_hvs = torch.empty((self.numclasses, self.hvsize), dtype=torch.int).to('cuda')
         self.roundingdp = roundingdp
         self.num_activations = num_activations
+        self.quantization_bins = quantization_bins
+        self.codebook = {}
+        
+        # Load activations
         data = pd.read_csv("fashionmnist_KANCbaseline_activations.csv")
-        # change this to include only all activations of target layer and activations of next layer/or true label
-        training_data = data.loc[:, "linearlayer1_neuron_0":"true_label"]
-        training_data = training_data.drop("linearlayer2_max_index", axis=1)
-        # uncomment below to test subset of data for debugging
-        # training_data = training_data[:-59500]
+        training_data = data.loc[:, "linearlayer1_neuron_0":"true_label"].drop("linearlayer2_max_index", axis=1)
+        training_data = training_data[:-59500]
+        
+        # Store training groups
         self.training_groups = {}
         for i in range(self.numclasses):
-            self.training_groups[i] = torch.round(torch.tensor(training_data[training_data["true_label"] == int(i)].iloc[:, :-1].to_numpy()), decimals=self.roundingdp).to('cuda')
-
-        
+            self.training_groups[i] = self.quantize(torch.tensor(training_data[training_data["true_label"] == int(i)].iloc[:, :-1].to_numpy()).to('cuda'))
+    
+    def quantize(self, tensor):
+        """Quantizes activations into discrete bins"""
+        min_val, max_val = tensor.min(), tensor.max()
+        bins = torch.linspace(min_val, max_val, self.quantization_bins).to(tensor.device)
+        return torch.bucketize(tensor, bins) - 1  # Shift to 0-based index
 
     def set(self, symbol):
+        """Assigns a random hypervector to each unique activation level"""
         self.codebook[symbol] = torchhd.BSCTensor.random(1, self.hvsize).to('cuda')
-        return
 
     def get(self, symbol):
         return self.codebook[symbol]
     
     def process_row(self, row):
-        n_features = row.shape[0]
-        res = torch.empty((n_features, self.hvsize), dtype=torch.float).to('cuda')
-        for i in range(n_features):
-            value = row[i].item()
-            if value not in self.codebook:
-                    self.set(value)
-            res[i] = self.get(value)
-        return res
+        """Maps activations to hypervectors and binds them"""
+        res = torch.empty((row.shape[0], self.hvsize), dtype=torch.float).to('cuda')
+        for i, value in enumerate(row):
+            if value.item() not in self.codebook:
+                self.set(value.item())
+            res[i] = self.get(value.item())
+        return torchhd.bind(res)  # Bind all activation hypervectors
 
     def trainhdc(self):
-        for i in tqdm.tqdm(range(self.numclasses)):
-            n_examples = self.training_groups[i].shape[0]
-            res = torch.empty((n_examples, self.num_activations, self.hvsize), dtype=torch.float).to('cuda')
-            for k in tqdm.tqdm(range(self.training_groups[i].shape[0])):
-                res[k] = self.process_row(self.training_groups[i][k])
-            for j in range(self.num_activations):
-                res[:, j, :] = torchhd.permute(res[:, j, :], shifts=j)
-            res = torch.mean(res.float(), axis=1)
-            rounded_tensor = torch.round(res)
-            # print(rounded_tensor)
-            half_values = (res == 0.5)
-            random_choices = torch.bernoulli(torch.ones_like(res[half_values], dtype=torch.float32) * 0.5).to('cuda').int()
-            rounded_tensor[half_values] = random_choices.float()
-
-            self.class_hvs[i] = torchhd.multibundle(torchhd.BSCTensor(rounded_tensor.int()).to('cuda'))
-            # put .int in forward too
-            print(self.class_hvs[i])
-        return
+        """Trains HDC layer by encoding activations into hypervectors and computing class representations"""
+        for i in range(self.numclasses):
+            examples = self.training_groups[i]
+            res = torch.stack([self.process_row(example) for example in examples])
+            self.class_hvs[i] = torchhd.bundle(res).int()
 
     def hdc_forward(self, x):
-        x = torch.round(x, decimals=self.roundingdp)
-        # res = torch.empty((x.shape[0], self.numclasses), dtype=torch.int)
-        inputhvs = torch.empty((x.shape[0], self.num_activations, self.hvsize), dtype=torch.float).to('cuda')
-        for k in range(x.shape[0]):
-            inputhvs[k] = self.process_row(x[k])
-            # if error convert MAPTensor to normal tensor
-        for j in range(self.num_activations):
-            inputhvs[:, j, :] = torchhd.permute(inputhvs[:, j, :], shifts=j)
-        inputhvs = torch.mean(inputhvs.float(), axis=1)
-        rounded_tensor = torch.round(inputhvs)
-        half_values = (inputhvs == 0.5)
-        random_choices = torch.bernoulli(torch.ones_like(inputhvs[half_values], dtype=torch.float) * 0.5).to('cuda').int()
-        rounded_tensor[half_values] = random_choices.float()
-        res = torchhd.hamming_similarity(torchhd.BSCTensor(rounded_tensor.int()).to('cuda'), self.class_hvs)
-        return res
+        x = self.quantize(torch.round(x, decimals=self.roundingdp))
+        input_hvs = torch.stack([self.process_row(sample) for sample in x])
+        return torchhd.hamming_similarity(input_hvs, self.class_hvs)
     
-    def save_codebook(self):
-        with open("HDC-reinforced-KANC-codebook-FC2.csv", "w", newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(self.codebook.keys())
-            val_row = []
-            for val in self.codebook.values():
-                val_row.append(val.tolist()[0])
-            writer.writerow(val_row)
-            # remember to call torchhd.BSCTensor() on each list when loading saved codebook
-        return
-    
-    def save_class_hvs(self):
-        pd.DataFrame(self.class_hvs.detach().cpu()).to_csv('HDC-reinforced-KANC-Class-HVs-FC2.csv', index=False, header=False)
-        return
-    
-    def save_model(self):
-        self.save_codebook()
-        self.save_class_hvs()
-        return
-
+    def visualize_hypervectors(self, use_tsne=False):
+        """Visualizes activation hypervectors in latent space"""
+        activations, labels = [], []
+        for class_id, hv_group in self.training_groups.items():
+            for hv in hv_group:
+                activations.append(self.process_row(hv).cpu().numpy())
+                labels.append(class_id)
+        
+        activations = torch.tensor(activations)
+        reducer = TSNE(n_components=2) if use_tsne else PCA(n_components=2)
+        activations_2d = reducer.fit_transform(activations)
+        
+        plt.figure(figsize=(10, 7))
+        scatter = plt.scatter(activations_2d[:, 0], activations_2d[:, 1], c=labels, cmap="tab10", alpha=0.7)
+        plt.colorbar(scatter, label="Class Label")
+        plt.xlabel("Component 1" if not use_tsne else "t-SNE Dim 1")
+        plt.ylabel("Component 2" if not use_tsne else "t-SNE Dim 2")
+        plt.title(f"Hypervector Latent Space Visualization ({'t-SNE' if use_tsne else 'PCA'})")
+        plt.show()
 
 class KANC_HDC(nn.Module):
-    def __init__(self,grid_size: int = 5):
+    def __init__(self, grid_size: int = 5):
         super().__init__()
-        self.conv1 = KAN_Convolutional_Layer(in_channels=1,
-            out_channels= 5,
-            kernel_size= (3,3),
-            grid_size = grid_size
-        )
-
-        self.conv2 = KAN_Convolutional_Layer(in_channels=5,
-            out_channels= 5,
-            kernel_size = (5,5),
-            grid_size = grid_size
-        )
-
-        self.conv3 = KAN_Convolutional_Layer(in_channels=5,
-            out_channels= 2,
-            kernel_size = (3,3),
-            grid_size = grid_size
-        )
-
+        self.conv1 = KAN_Convolutional_Layer(in_channels=1, out_channels=5, kernel_size=(3,3), grid_size=grid_size)
+        self.conv2 = KAN_Convolutional_Layer(in_channels=5, out_channels=5, kernel_size=(5,5), grid_size=grid_size)
+        self.conv3 = KAN_Convolutional_Layer(in_channels=5, out_channels=2, kernel_size=(3,3), grid_size=grid_size)
         self.pool1 = nn.MaxPool2d(kernel_size=(2, 2))
         self.flat = nn.Flatten()
         self.linearlayer1 = nn.Linear(98, 200)
         self.relu = nn.ReLU()
         self.linearlayer2 = nn.Linear(200, 10)
-        self.name = f"KANC MLP (Small) (gs = {grid_size})"
         self.hdc_clf = hdc_linear_layer2(10000, 2, 10, 200)
 
-    
     def trainhdclayer(self):
         self.hdc_clf.trainhdc()
-        self.hdc_clf.save_model()
-
+        self.hdc_clf.visualize_hypervectors(use_tsne=True)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -153,6 +115,7 @@ class KANC_HDC(nn.Module):
         x = self.relu(self.linearlayer1(x))
         x = self.hdc_clf.hdc_forward(x)
         return x
+
     
 def test(model, testloader, device):
     model.eval()
@@ -271,6 +234,9 @@ def main():
 
     model.load_state_dict(torch.load("models/KANC_MLP.pth", map_location=device))
     model.trainhdclayer()
+
+    # visualize model
+    model.visualize_hypervectors(use_tsne=True)
     # model = KANC_HDC().to(device)
 
     # # test saved model with noise
