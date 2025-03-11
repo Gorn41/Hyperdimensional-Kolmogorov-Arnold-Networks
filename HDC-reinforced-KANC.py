@@ -14,6 +14,7 @@ import pandas as pd
 import torchhd
 
 class hdc_linear_layer2:
+    
     def __init__(self, hvsize, roundingdp, numclasses, num_activations):
         self.hvsize = hvsize
         self.codebook = {}
@@ -26,10 +27,11 @@ class hdc_linear_layer2:
         training_data = data.loc[:, "linearlayer1_neuron_0":"true_label"]
         training_data = training_data.drop("linearlayer2_max_index", axis=1)
         # uncomment below to test subset of data for debugging
-        training_data = training_data[:-59500]
+        training_data = training_data[:-20000]
         self.training_groups = {}
         for i in range(self.numclasses):
-            self.training_groups[i] = np.round(training_data[training_data["true_label"] == i].iloc[:, :-1], self.roundingdp)
+            self.training_groups[i] = torch.round(torch.tensor(training_data[training_data["true_label"] == int(i)].iloc[:, :-1].to_numpy()), decimals=self.roundingdp)
+            print(self.training_groups[i])
         
 
     def set(self, symbol):
@@ -43,7 +45,7 @@ class hdc_linear_layer2:
         n_features = row.shape[0]
         res = torch.empty((n_features, self.hvsize), dtype=torch.float)
         for i in range(n_features):
-            value = row.iloc[i]
+            value = row[i]
             if value not in self.codebook:
                     self.set(value)
             res[i] = self.get(value)
@@ -53,30 +55,27 @@ class hdc_linear_layer2:
         for i in tqdm.tqdm(range(self.numclasses)):
             n_examples = self.training_groups[i].shape[0]
             res = torch.empty((n_examples, self.num_activations, self.hvsize), dtype=torch.float)
-            res_idx = 0
-            for _, row in tqdm.tqdm(self.training_groups[i].iterrows()):
-                res[res_idx] = self.process_row(row)
-                res_idx += 1
-            for j in self.num_activations:
+            for k in tqdm.tqdm(range(self.training_groups[i].shape[0])):
+                res[k] = self.process_row(self.training_groups[i][k])
+            print(res)
+            for j in range(self.num_activations):
                 res[:, j, :] = torchhd.permute(res[:, j, :], shifts=j)
             res = torch.mean(res, axis=1)
             rounded_tensor = torch.round(res)
             half_values = (res == 0.5)
             random_choices = torch.bernoulli(torch.ones_like(res[half_values], dtype=torch.float32) * 0.5).int()
-            rounded_tensor[half_values] = random_choices
+            rounded_tensor[half_values] = random_choices.float()
             self.class_hvs[i] = torchhd.multibundle(rounded_tensor)
         return
 
     def hdc_forward(self, x):
-        x = np.round(pd.DataFrame(x), self.roundingdp)
+        x = torch.round(d, decimals=self.roundingdp)
         # res = torch.empty((x.shape[0], self.numclasses), dtype=torch.int)
         inputhvs = torch.empty((x.shape[0], self.num_activations, self.hvsize), dtype=torch.float)
-        input_idx = 0
-        for _, row in x.iterrows():
-            inputhvs[input_idx] = self.process_row(row)
+        for k in tqdm.tqdm(range(x.shape[0])):
+            inputhvs[k] = self.process_row(x[k])
             # if error convert MAPTensor to normal tensor
-            input_idx += 1
-        for j in self.num_activations:
+        for j in range(self.num_activations):
             inputhvs[:, j, :] = torchhd.permute(inputhvs[:, j, :], shifts=j)
         inputhvs = torch.mean(inputhvs, axis=1)
         rounded_tensor = torch.round(inputhvs)
@@ -131,6 +130,8 @@ class KANC_HDC(nn.Module):
         self.linearlayer2 = nn.Linear(200, 10)
         self.name = f"KANC MLP (Small) (gs = {grid_size})"
         self.hdc_clf = hdc_linear_layer2(10000, 2, 10, 200)
+    
+    def train(self):
         self.hdc_clf.train()
         self.hdc_clf.save_model()
 
@@ -261,6 +262,7 @@ def main():
     model = KANC_HDC().to(device)
 
     model.load_state_dict(torch.load("models/KANC_MLP.pth", map_location=device))
+    model.train()
     # model = KANC_HDC().to(device)
 
     # # test saved model with noise

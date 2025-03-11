@@ -282,7 +282,7 @@ def main(trainingmode=True):
             #     n_features = 11 * 11 * 5
             #     headers += [f"{name}_neuron_{i}" for i in range(n_features)]
             if name == 'conv3':
-                n_features = 9 * 9 * 2
+                n_features = 7 * 7 * 2
                 headers.extend([f"{name}_neuron_{i}" for i in range(n_features)])
         if name.startswith('linearlayer'):
             if name == 'linearlayer2':

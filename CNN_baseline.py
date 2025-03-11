@@ -13,12 +13,12 @@ class CNN(nn.Module):
         super(CNN, self).__init__()
         self.conv_layer1 = nn.Conv2d(1, 5, 3)  # Input: (1, 28, 28) -> Output: (3, 26, 26)
         self.max_pool1 = nn.MaxPool2d(2, 2)  # Output: (3, 13, 13)
-        self.conv_layer2 = nn.Conv2d(5, 5, 3)  # Output: (6, 11, 11)
+        self.conv_layer2 = nn.Conv2d(5, 5, 5)  # Output: (6, 11, 11)
         self.conv_layer3 = nn.Conv2d(5, 2, 3)  # Output: (6, 11, 11)
         self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(162, 500)  # Adjusted to match output size
+        self.fc1 = nn.Linear(98, 200)  # Adjusted to match output size
         self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(500, 10)  # 10 classes for FashionMNIST
+        self.fc2 = nn.Linear(200, 10)  # 10 classes for FashionMNIST
 
     def forward(self, x):
         x = self.conv_layer1(x)
