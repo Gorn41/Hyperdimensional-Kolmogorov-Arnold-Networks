@@ -18,7 +18,9 @@ class CNN(nn.Module):
         self.conv_layer3 = nn.Conv2d(64, 128, 3, padding=1)
         self.max_pool3 = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(128 * 3 * 3, 256)  # Adjusted for SVHN image size
+        
+        # Initially setting `fc1` with a placeholder value
+        self.fc1 = nn.Linear(128 * 3 * 3, 256)  # Placeholder; will update this based on dynamic size
         self.relu = nn.ReLU()
         self.fc2 = nn.Linear(256, 10)
     
@@ -26,10 +28,21 @@ class CNN(nn.Module):
         x = self.max_pool1(torch.relu(self.conv_layer1(x)))
         x = self.max_pool2(torch.relu(self.conv_layer2(x)))
         x = self.max_pool3(torch.relu(self.conv_layer3(x)))
+        
+        # Dynamically calculate the flattened size
         x = self.flatten(x)
+        
+        # After flattening, pass to fully connected layers
         x = self.relu(self.fc1(x))
         x = self.fc2(x)
         return x
+    
+    def _get_fc1_input_size(self, x):
+        # Pass a dummy input through the convolution layers to calculate the output size
+        x = self.max_pool1(torch.relu(self.conv_layer1(x)))
+        x = self.max_pool2(torch.relu(self.conv_layer2(x)))
+        x = self.max_pool3(torch.relu(self.conv_layer3(x)))
+        return x.numel()  # Flattened size after all conv layers
 
 MODEL_PATH = "models/cnn_baseline_svhn.pth"
 
@@ -110,6 +123,11 @@ def main(trainingmode=True):
 
     model = CNN().to(device)
     
+    # Adjust fc1 based on the calculated input size
+    dummy_input = torch.zeros(1, 3, 32, 32)  # Batch size 1, 3 channels, 32x32 images
+    fc1_input_size = model._get_fc1_input_size(dummy_input)
+    model.fc1 = nn.Linear(fc1_input_size, 256)  # Update fc1 with the correct input size
+
     if trainingmode:
         best_model = train(model, trainloader, learning_rate, epochs, device, testloader)
         torch.save(best_model.state_dict(), MODEL_PATH)
