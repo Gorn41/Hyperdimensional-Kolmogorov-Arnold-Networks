@@ -128,9 +128,10 @@ def main(trainingmode=True):
     model = CNN().to(device)
     
     # Adjust fc1 based on the calculated input size
-    dummy_input = torch.zeros(1, 3, 32, 32)  # Batch size 1, 3 channels, 32x32 images
+    dummy_input = torch.zeros(1, 3, 32, 32).to(device)  # Move to same device as model
     fc1_input_size = model._get_fc1_input_size(dummy_input)
-    model.fc1 = nn.Linear(fc1_input_size, 256)  # Update fc1 with the correct input size
+    model.fc1 = nn.Linear(fc1_input_size, 256).to(device)  # Move fc1 to the correct device
+
 
     if trainingmode:
         best_model = train(model, trainloader, learning_rate, epochs, device, testloader)
