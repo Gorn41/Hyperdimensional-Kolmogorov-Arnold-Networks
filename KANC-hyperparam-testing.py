@@ -17,13 +17,27 @@ import pandas as pd
 from kan_convolutional.KANConv import KAN_Convolutional_Layer
 
 class LeHDCCNN(nn.Module):
-    def __init__(self, hdc_dimensions=1000, n_classes=10, dropout_rate=0.1, n_levels=200):
+    def __init__(self, hdc_dimensions=1000, n_classes=10, dropout_rate=0.1, n_levels=200, grid_size: int = 5):
         super(LeHDCCNN, self).__init__()
         
 
-        self.conv1 = nn.Conv2d(1, 5, kernel_size=3)
-        self.conv2 = nn.Conv2d(5, 5, kernel_size=5)
-        self.conv3 = nn.Conv2d(5, 2, kernel_size=3)
+        self.conv1 = KAN_Convolutional_Layer(in_channels=1,
+            out_channels= 5,
+            kernel_size= (3,3),
+            grid_size = grid_size
+        )
+        
+        self.conv2 = KAN_Convolutional_Layer(in_channels=5,
+            out_channels= 5,
+            kernel_size= (5,5),
+            grid_size = grid_size
+        )
+        self.conv3 = KAN_Convolutional_Layer(in_channels=5,
+            out_channels= 2,
+            kernel_size= (3,3),
+            grid_size = grid_size
+        )
+        
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
