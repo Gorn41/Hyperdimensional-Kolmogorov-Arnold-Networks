@@ -38,7 +38,7 @@ class LeHDCCNN(nn.Module):
             n_levels=n_classes,             # you can kind of think of this as rounding
             min_level=-1,             # don't change this
             max_level=1,              # don'change this
-            epochs=120,                # scale with the other epoch param
+            epochs=200,                # scale with the other epoch param
             lr=0.0001              # don't change this
         )
 
