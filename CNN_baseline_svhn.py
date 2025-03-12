@@ -19,23 +19,25 @@ class CNN(nn.Module):
         self.max_pool3 = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
         
-        # Initially setting `fc1` with a placeholder value
-        self.fc1 = nn.Linear(128 * 3 * 3, 256)  # Placeholder; will update this based on dynamic size
+        # Placeholder fully connected layers, will update dynamically
+        self.fc1 = None  
         self.relu = nn.ReLU()
         self.fc2 = nn.Linear(256, 10)
-    
+
     def forward(self, x):
         x = self.max_pool1(torch.relu(self.conv_layer1(x)))
         x = self.max_pool2(torch.relu(self.conv_layer2(x)))
         x = self.max_pool3(torch.relu(self.conv_layer3(x)))
-        
-        # Dynamically calculate the flattened size
         x = self.flatten(x)
-        
-        # After flattening, pass to fully connected layers
+
+        if self.fc1 is None:
+            # Dynamically determine input size for fc1
+            self.fc1 = nn.Linear(x.shape[1], 256).to(x.device)
+
         x = self.relu(self.fc1(x))
         x = self.fc2(x)
         return x
+
     
     def _get_fc1_input_size(self, x):
         # Pass a dummy input through the convolution layers to calculate the output size
