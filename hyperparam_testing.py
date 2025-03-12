@@ -35,23 +35,18 @@ class LeHDCCNN(nn.Module):
 
         
     def forward(self, x):
-        # Feature extraction
         x = self.pool(F.relu(self.conv1(x)))
         x = self.conv2(x)
         x = self.conv3(x)
         
-        # Flatten
         x = self.flatten(x)
         
-        # Linear layer with tanh activation
         x = self.fc(x)
         x = self.dropout(x)
-        # LeHDC classification
         x = self.lehdc(x)
         
         return x
 
-# Load MNIST dataset
 def load_mnist_data(batch_size=34):
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -68,7 +63,6 @@ def load_mnist_data(batch_size=34):
     
     return train_loader, valloader, test_loader
 
-# Training function
 def train(model, train_loader, optimizer, criterion, device, epoch):
     model.train()
     running_loss = 0.0
@@ -78,20 +72,13 @@ def train(model, train_loader, optimizer, criterion, device, epoch):
     for batch_idx, (images, labels) in enumerate(train_loader):
         images, labels = images.to(device), labels.to(device)
         
-        # Zero the parameter gradients
         optimizer.zero_grad()
-        
-        # Forward pass
         outputs = model(images)
         loss = criterion(outputs, labels)
-        
-        # Backward pass and optimize
         loss.backward()
         optimizer.step()
         
         running_loss += loss.item()
-        
-        # Calculate accuracy
         _, predicted = outputs.max(1)
         total += labels.size(0)
         correct += predicted.eq(labels).sum().item()
@@ -103,7 +90,6 @@ def train(model, train_loader, optimizer, criterion, device, epoch):
     train_acc = 100. * correct / total
     return train_loss, train_acc
 
-# Testing function
 def test(model, test_loader, criterion, device):
     model.eval()
     test_loss = 0
@@ -118,7 +104,6 @@ def test(model, test_loader, criterion, device):
             
             test_loss += loss.item()
             
-            # Calculate accuracy
             _, predicted = outputs.max(1)
             total += labels.size(0)
             correct += predicted.eq(labels).sum().item()
@@ -128,30 +113,24 @@ def test(model, test_loader, criterion, device):
     print(f'Test Loss: {test_loss:.4f}, Test Accuracy: {test_acc:.2f}%')
     return test_loss, test_acc
 
-# Main function to run training and testing
+
 def main():
-    # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     
-    # Hyperparameters
+    # Hyperparams
     batch_size = 32
     learning_rate = 0.001
     num_epochs = 10
     hdc_dimensions = 1024
     dropout_rate = 0.1
+    n_levels = 200 # you can kind of think of this as rounding sensitivity
     
-    # Load data
     train_loader, valloader, test_loader = load_mnist_data(batch_size)
-    
-    # Create model
-    model = LeHDCCNN(hdc_dimensions=hdc_dimensions, n_classes=10, dropout_rate=dropout_rate).to(device)
-    
-    # Define loss function and optimizer
+    model = LeHDCCNN(hdc_dimensions=hdc_dimensions, n_classes=10, dropout_rate=dropout_rate, n_levels=n_levels).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     
-    # Training and testing loop
     best_val_acc = 0
     
     for epoch in range(num_epochs):
@@ -162,7 +141,6 @@ def main():
         print(f'Train Loss: {train_loss:.4f}, Train Accuracy: {train_acc:.2f}%')
         print(f'Test Loss: {val_loss:.4f}, Test Accuracy: {val_acc:.2f}%')
         
-        # Save best model
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             torch.save(model.state_dict(), 'cnn_lehdc_best.pth')
