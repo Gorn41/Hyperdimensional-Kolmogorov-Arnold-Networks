@@ -46,3 +46,19 @@ Test Accuracy: 76.62%, Test Loss: 0.0              precision    recall  f1-score
     accuracy                           0.77      5000
    macro avg       0.78      0.77      0.73      5000
 weighted avg       0.78      0.77      0.74      5000
+Test Accuracy: 76.56%, Test Loss: 0.0              precision    recall  f1-score   support
+
+           0       0.73      0.79      0.76       491
+           1       1.00      0.81      0.90       495
+           2       0.67      0.57      0.62       495
+           3       0.81      0.76      0.78       482
+           4       0.61      0.71      0.66       525
+           5       0.83      0.94      0.88       497
+           6       0.45      0.49      0.47       521
+           7       0.84      0.88      0.86       504
+           8       0.87      0.92      0.90       481
+           9       0.98      0.80      0.88       509
+
+    accuracy                           0.77      5000
+   macro avg       0.78      0.77      0.77      5000
+weighted avg       0.78      0.77      0.77      5000
