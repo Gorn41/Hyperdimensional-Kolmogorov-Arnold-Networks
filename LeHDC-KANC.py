@@ -250,7 +250,7 @@ def train(model, data, learning_rate, epochs, device, val_loader):
 
         if val_acc > best_acc:
             best_acc = val_acc
-            best_cnn = copy.deepcopy(model)
+            best_cnn = copy.deepcopy(model.state_dict())
 
         print(f"Epoch {epoch+1}/{epochs}, Validation Accuracy: {val_acc:.2f}%")
 
@@ -282,14 +282,14 @@ def main():
     model = KANCLeHDC()
 
     transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(), torchvision.transforms.Normalize((0.1307,), (0.3081,))])
-    train_dataset = MNIST("./data", train=True, transform=transform, download=True)
+    # train_dataset = MNIST("./data", train=True, transform=transform, download=True)
 
 
     # dataset_size = len(train_dataset)
     # train_subset = Subset(train_dataset, range(dataset_size // 50))
 
     # train_loader = DataLoader(train_subset, batch_size=64, shuffle=True)
-    test_dataset = MNIST("./data", train=False, transform=transform, download=True)
+    # test_dataset = MNIST("./data", train=False, transform=transform, download=True)
 
     # dataset_size = len(test_dataset)
     # test_subset = Subset(test_dataset, range(dataset_size // 50))
