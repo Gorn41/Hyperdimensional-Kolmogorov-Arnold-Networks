@@ -16,35 +16,38 @@ import csv
 import pandas as pd
 from kan_convolutional.KANConv import KAN_Convolutional_Layer
 
+# Same as the CNN class in soap-models/CNN_baseline.py, except the classifier layer is removed
+# This is a "template" class that can be used to create a CNN model with a custom classifier
+# The custom classifier is the LeHDC classifier in this case
 class CNNFeatureExtractor(nn.Module):
     def __init__(self, grid_size=5):
         super(CNNFeatureExtractor, self).__init__()
-        self.flat = nn.Flatten()
         self.feature_extractor = nn.Sequential(
-            nn.Conv2d(1, 5, 3),
+            nn.Conv2d(3, 16, kernel_size=3, padding=1),
+            
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
             nn.MaxPool2d(kernel_size=(2, 2)),
-            nn.Conv2d(5, 10, 3),
-            nn.Conv2d(10, 15, 3)
         )
         
-        self.feature_size = 1215
-        self.fc = nn.Linear(self.feature_size, 750)
-        self.classifier = nn.Linear(750, 10)  # Default to 10 classes
-        self.relu = nn.ReLU()
-        self.tanh = nn.Tanh()
+        self.flatten = nn.Flatten()
+        self.feature_size = 64 * 4 * 4
+        self.fc = nn.Linear(self.feature_size, 512)
+        # Chopped off the classifier layer
 
 
     def forward(self, x):
-        x = self.feature_extractor(x)
-        x = self.flat(x)
-        x = self.fc(x)
+        x = self.pool(F.relu(self.conv1(x)))  # Apply ReLU activation
+        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(F.relu(self.conv3(x)))
+        x = self.flatten(x)
+        x = F.relu(self.fc1(x))
+        x = self.dropout(x)
+        # Chopped off the classifier layer
+
         return x
-
-    def classify(self, x):
-        features = self.forward(x)
-        return self.classifier(features)
-
-
+        
+# This class is a combination of the CNNFeatureExtractor and LeHDC classes
 class CNN_HDC(nn.Module):
     def __init__(self, n_dimensions=10000, n_classes=10, n_levels=100, grid_size=5):
         super(CNN_HDC, self).__init__()
@@ -66,8 +69,9 @@ class CNN_HDC(nn.Module):
         
         self.lehdc_trained = False
 
+    # Forward pass through the feature extractor and the LeHDC classifier
     def forward(self, x):
-        features = self.feature_network(x)
+        features = self.feature_network.forward(x)
         return self.lehdc(features)
 
     def train_lehdc(self, train_loader, val_loader):
@@ -147,13 +151,11 @@ def test(name, model, testloader, device):
         for images, labels in tqdm.tqdm(testloader, total=batch_size):
             images, labels = images.to(device), labels.to(device)
             outputs = model.forward(images)
-            # print(outputs)
-            # print(outputs.shape)
+
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
             correct += (predicted.to('cuda') == labels).sum().item()
-            # loss = loss_func(outputs.float(), labels)
-            # total_loss += loss.item() * images.size(0)
+            
             all_preds.extend(predicted.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 
