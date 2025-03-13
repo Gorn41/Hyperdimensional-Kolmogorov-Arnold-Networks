@@ -38,7 +38,7 @@ class LeHDCCNN(nn.Module):
             n_levels=n_levels,             # you can kind of think of this as rounding
             min_level=-1,             # don't change this
             max_level=1,              # don'change this
-            epochs=400,                # scale with the other epoch param
+            epochs=200,                # scale with the other epoch param
             lr=0.0001              # don't change this
         )
 
@@ -226,7 +226,7 @@ def main():
     batch_size = 32
     learning_rate = 0.001
     num_epochs = 10
-    hdc_dimensions = 20000
+    hdc_dimensions = 10000
     dropout_rate = 0.0
     n_levels = 100 # you can kind of think of this as rounding sensitivity
     

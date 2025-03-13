@@ -224,18 +224,20 @@ def main():
     print(f"Using device: {device}")
     
     # Hyperparams
-    batch_size = 32
+    batch_size = 64
     learning_rate = 0.001
-    num_epochs = 10
+    num_epochs = 20
     hdc_dimensions = 10000
     dropout_rate = 0.0
-    n_levels = 150 # you can kind of think of this as rounding sensitivity
+    n_levels = 200 # you can kind of think of this as rounding sensitivity
     
     train_loader, valloader, test_loader = load_mnist_data(batch_size)
     model = LeHDCCNN(hdc_dimensions=hdc_dimensions, n_classes=10, dropout_rate=dropout_rate, n_levels=n_levels).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    
+    accs = []
+    val_losses = []
+    losses = []
     best_val_acc = 0
     
     for epoch in range(num_epochs):
@@ -245,7 +247,28 @@ def main():
         print(f'Epoch {epoch+1}/{num_epochs}:')
         print(f'Train Loss: {train_loss:.4f}, Train Accuracy: {train_acc:.2f}%')
         print(f'Val Loss: {val_loss:.4f}, Val Accuracy: {val_acc:.2f}%')
-        
+        accs.append(val_acc)
+        val_losses.append(val_loss)
+        losses.append(train_loss)
+        plt.figure()
+        plt.plot(np.arange(1, epoch + 2), accs)
+        plt.xlabel("Epoch")
+        plt.ylabel("Validation Accuracy")
+        plt.title("LeHDC CNN Validatation Accuracy over Epochs")
+        plt.savefig("./LeHDC_CNN_fashionmnist_val_acc.png")
+        plt.figure()
+        plt.plot(np.arange(1, epoch + 2), losses)
+        plt.xlabel("Epoch")
+        plt.ylabel("Training Loss")
+        plt.title("LeHDC CNN Training Loss over Epochs")
+        plt.savefig("./LeHDC_CNN_fashionmnist_training_loss.png")
+        plt.figure()
+        plt.plot(np.arange(1, epoch + 2), val_losses)
+        plt.xlabel("Epoch")
+        plt.ylabel("Validation Loss")
+        plt.title("LeHDC CNN Baseline Validatation Loss over Epochs")
+        plt.savefig("./LeHDC_CNN_fashionmnist_val_loss.png")
+        plt.close('all')
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             torch.save(model.state_dict(), 'cnn_lehdc_best.pth')
