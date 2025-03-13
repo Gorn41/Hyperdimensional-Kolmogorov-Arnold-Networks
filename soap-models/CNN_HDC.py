@@ -256,11 +256,11 @@ def main():
 
     model.eval()
 
-    test(model, testloader, device)
-    test_with_noise(model, testloader, device, noise_std=0.1)
-    test_with_noise(model, testloader, device, noise_std=0.4)
-    test_with_noise(model, testloader, device, noise_std=0.7)
-    test_with_noise(model, testloader, device, noise_std=1.0)
+    test("CNN_HDC", model, testloader, device)
+    test_with_noise("CNN_HDC", model, testloader, device, noise_std=0.1)
+    test_with_noise("CNN_HDC", model, testloader, device, noise_std=0.4)
+    test_with_noise("CNN_HDC", model, testloader, device, noise_std=0.7)
+    test_with_noise("CNN_HDC", model, testloader, device, noise_std=1.0)
 
 if __name__ == '__main__':
     main()
