@@ -17,7 +17,7 @@ import pandas as pd
 from kan_convolutional.KANConv import KAN_Convolutional_Layer
 
 class LeHDCCNN(nn.Module):
-    def __init__(self, hdc_dimensions=1000, n_classes=10, dropout_rate=0.1, n_levels=200):
+    def __init__(self, hdc_dimensions=10000, n_classes=10, dropout_rate=0.1, n_levels=200):
         super(LeHDCCNN, self).__init__()
         
 
@@ -226,7 +226,7 @@ def main():
     batch_size = 32
     learning_rate = 0.001
     num_epochs = 10
-    hdc_dimensions = 10000
+    hdc_dimensions = 30000
     dropout_rate = 0.0
     n_levels = 150 # you can kind of think of this as rounding sensitivity
     
