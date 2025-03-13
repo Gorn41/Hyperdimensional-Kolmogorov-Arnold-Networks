@@ -72,7 +72,7 @@ class KANCLeHDCModel(nn.Module):
         features = self.feature_network(x)
         return self.lehdc(features)
 
-    def train_lehdc(self, train_loader):
+    def train_lehdc(self, train_loader, val_loader):
         features = []
         labels = []
 
@@ -94,7 +94,28 @@ class KANCLeHDCModel(nn.Module):
         shuffle=True   
         )
 
-        self.lehdc.fit(lehdc_loader)
+        valfeatures = []
+        vallabels = []
+
+        with torch.no_grad():
+            for images, targets in val_loader:
+                images = images.to(next(self.parameters()).device)
+                feat = self.feature_network.forward(images)
+                valfeatures.append(feat)
+                vallabels.append(targets)
+
+        valfeatures = torch.cat(valfeatures, dim=0)
+        vallabels = torch.cat(vallabels, dim=0)
+
+        valdataset = torch.utils.data.TensorDataset(valfeatures.to('cuda'), vallabels.to('cuda'))
+    
+        lehdc_val_loader = torch.utils.data.DataLoader(
+        valdataset, 
+        batch_size=32,  
+        shuffle=True   
+        )
+
+        self.lehdc.fit(lehdc_loader, lehdc_val_loader)
         self.lehdc_trained = True
 
 def validate(model, val_loader, loss_func, device):
@@ -300,7 +321,7 @@ def main():
 
     model.feature_network.load_state_dict(torch.load("KANC_MLP.pth", map_location=device))
 
-    model.train_lehdc(trainloader)
+    model.train_lehdc(trainloader, valloader)
 
     model.eval()
 
