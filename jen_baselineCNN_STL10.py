@@ -240,33 +240,35 @@ def main():
         val_losses.append(val_loss)
         losses.append(train_loss)
         
-        plt.figure()
-        plt.plot(np.arange(1, epoch + 2), accs)
-        plt.xlabel("Epoch")
-        plt.ylabel("Validation Accuracy")
-        plt.title("LeHDC CNN Validation Accuracy over Epochs")
-        plt.savefig("./STL10_results/STL10_baselineCNN_val_acc.png")
-        
-        plt.figure()
-        plt.plot(np.arange(1, epoch + 2), losses)
-        plt.xlabel("Epoch")
-        plt.ylabel("Training Loss")
-        plt.title("LeHDC CNN Training Loss over Epochs")
-        plt.savefig("./STL10_results/STL10_baselineCNN_training_loss.png")
-        
-        plt.figure()
-        plt.plot(np.arange(1, epoch + 2), val_losses)
-        plt.xlabel("Epoch")
-        plt.ylabel("Validation Loss")
-        plt.title("LeHDC CNN Baseline Validation Loss over Epochs")
-        plt.savefig("./STL10_results/STL10_baselineCNN_val_loss.png")
-        
-        plt.close('all')
-        
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             torch.save(model.state_dict(), './STL10_results/STL10_baselineCNN_best.pth')
             print(f'Model saved with val accuracy: {val_acc:.2f}%')
+    
+    
+    plt.figure()
+    plt.plot(np.arange(1, epoch + 2), accs)
+    plt.xlabel("Epoch")
+    plt.ylabel("Validation Accuracy")
+    plt.title("LeHDC CNN Validation Accuracy over Epochs")
+    plt.savefig("./STL10_results/STL10_baselineCNN_val_acc.png")
+    
+    plt.figure()
+    plt.plot(np.arange(1, epoch + 2), losses)
+    plt.xlabel("Epoch")
+    plt.ylabel("Training Loss")
+    plt.title("LeHDC CNN Training Loss over Epochs")
+    plt.savefig("./STL10_results/STL10_baselineCNN_training_loss.png")
+    
+    plt.figure()
+    plt.plot(np.arange(1, epoch + 2), val_losses)
+    plt.xlabel("Epoch")
+    plt.ylabel("Validation Loss")
+    plt.title("LeHDC CNN Baseline Validation Loss over Epochs")
+    plt.savefig("./STL10_results/STL10_baselineCNN_val_loss.png")
+    
+    plt.close('all')
+        
     
     print(f'Best val accuracy: {best_val_acc:.2f}%')
     
