@@ -45,7 +45,7 @@ class LeHDCCNN(nn.Module):
         
     def forward(self, x):
         x = self.pool(self.conv1(x))
-        x = self.conv2(x)
+        x = F.relu(self.conv2(x))
         x = self.conv3(x)
         
         x = self.flatten(x)
