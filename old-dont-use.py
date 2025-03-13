@@ -66,7 +66,6 @@ class KANCFeatureExtractor(nn.Module):
         x = self.feature_extractor(x)
         x = self.flat(x)
         x = self.fc(x)
-        x = self.tanh(x)
         return x
 
     def classify(self, x):
@@ -107,7 +106,7 @@ class KANCLeHDCModel(nn.Module):
         with torch.no_grad():
             for images, targets in train_loader:
                 images = images.to(next(self.parameters()).device)
-                feat = self.feature_network(images)
+                feat = self.feature_network.forward(images)
                 features.append(feat)
                 labels.append(targets)
 
@@ -244,7 +243,7 @@ def train(model, data, learning_rate, epochs, device, val_loader):
             images = images.to(device)
             labels = labels.to(device)
             optimizer.zero_grad()
-            outputs = model(images)
+            outputs = model.classifier(images)
             loss = loss_func(outputs, labels)
             total_loss += loss.item() * images.size(0)
             loss.backward()
