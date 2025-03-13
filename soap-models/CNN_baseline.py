@@ -12,49 +12,31 @@ from sklearn.metrics import confusion_matrix, classification_report
 import seaborn as sns
 import pandas as pd
 
+# CNN baseline model
 class CNN(nn.Module):
-    def __init__(self, dropout_rate=0.1):
+    def __init__(self):
         super(CNN, self).__init__()
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)  # Change input channels to 3 (RGB)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
         self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
         # Compute the correct input size for the fully connected layer
         self.fc1 = nn.Linear(64 * 4 * 4, 512)  # CIFAR-100 input size
-        self.dropout = nn.Dropout(dropout_rate)
-        self.fc2 = nn.Linear(512, 100)  # Output 100 classes for CIFAR-100
+        self.classifier = nn.Linear(512, 100)  # Output 100 classes for CIFAR-100
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))  # Apply ReLU activation
         x = self.pool(F.relu(self.conv2(x)))
         x = self.pool(F.relu(self.conv3(x)))
-
         x = self.flatten(x)
 
         x = F.relu(self.fc1(x))
         x = self.dropout(x)
-        x = self.fc2(x)
+        x = self.classifier(x)
 
         return x
-
-def load_mnist_data(batch_size=34):
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
-    ])
-    
-    train_data = torchvision.datasets.CIFAR100(root='data', train=True, download=True, transform=transform)
-    other_data = torchvision.datasets.CIFAR100(root='data', train=False, download=True, transform=transform)
-    val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
-
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
-    valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_size, shuffle=True)
-    test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size)
-    
-    return train_loader, valloader, test_loader
 
 def train(model, train_loader, optimizer, criterion, device, epoch):
     model.train()
@@ -201,6 +183,22 @@ def test_with_noise(name, model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
+def load_mnist_data(batch_size=34):
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+    
+    train_data = torchvision.datasets.CIFAR100(root='data', train=True, download=True, transform=transform)
+    other_data = torchvision.datasets.CIFAR100(root='data', train=False, download=True, transform=transform)
+    val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
+
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
+    valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_size, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size)
+    
+    return train_loader, valloader, test_loader
+
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
@@ -214,7 +212,7 @@ def main():
     n_levels = 150 # you can kind of think of this as rounding sensitivity
     
     train_loader, valloader, test_loader = load_mnist_data(batch_size)
-    model = CNN(dropout_rate=dropout_rate).to(device)
+    model = CNN().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     
