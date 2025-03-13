@@ -64,7 +64,7 @@ class KANCLeHDCModel(nn.Module):
             min_level=-1,
             max_level=1,
             epochs=20,
-            dropout_rate=0.2,
+            dropout_rate=0.3,
             lr=0.01,
             device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
         )
@@ -281,7 +281,7 @@ def train(model, data, learning_rate, epochs, device, val_loader):
         plt.close('all')
     return best_cnn
 
-def main(trainingmode=False):
+def main(trainingmode=True):
     num_epochs = 10
     batch_sz = 32
     learning_rate = 0.001
