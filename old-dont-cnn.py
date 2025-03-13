@@ -62,6 +62,7 @@ class KANCLeHDCModel(nn.Module):
             min_level=-1,
             max_level=1,
             epochs=10,
+            dropout_rate=0.1
             lr=0.01,
             device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
         )
