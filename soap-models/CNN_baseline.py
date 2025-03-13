@@ -33,7 +33,6 @@ class CNN(nn.Module):
         x = self.flatten(x)
 
         x = F.relu(self.fc1(x))
-        x = self.dropout(x)
         x = self.classifier(x)
 
         return x
