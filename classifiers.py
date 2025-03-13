@@ -23,6 +23,7 @@
 #
 from typing import Optional, Literal, Callable, Iterable, Tuple
 import math
+import matplotlib.pyplot as plt
 import scipy.linalg
 from tqdm import trange
 import torch
@@ -33,6 +34,7 @@ import copy
 import torchhd.functional as functional
 from torchhd.embeddings import Random, Level, Projection, Sinusoid, Density
 from torchhd.models import Centroid, IntRVFL as IntRVFLModel
+import numpy as np
 
 DataLoader = Iterable[Tuple[Tensor, LongTensor]]
 
@@ -636,7 +638,8 @@ class LeHDC(Classifier):
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer, patience=self.patience
         )
-
+        valaccs = []
+        vallosses = []
         for _ in trange(self.epochs, desc="fit"):
             self.train
             accumulated_loss = 0
@@ -666,10 +669,25 @@ class LeHDC(Classifier):
             scheduler.step(accumulated_loss)
             val_acc, val_loss = self.validatationtesting(val_loader, criterion)
             print(f"val acc: {val_acc}, val loss: {val_loss}")
+            valaccs.append(val_acc)
+            vallosses.append(val_loss)
             if val_acc > best_acc:
                 best_acc = val_acc
                 best_model = self.model.weight.data
 
+        plt.figure()
+        plt.plot(np.arange(1, epoch + 2), accs)
+        plt.xlabel("Epoch")
+        plt.ylabel("Validation Accuracy")
+        plt.title("LeHDC Valiidation Accuracy over Epochs")
+        plt.savefig("./LeHDC_val_acc.png")
+        plt.figure()
+        plt.plot(np.arange(1, epoch + 2), val_losses)
+        plt.xlabel("Epoch")
+        plt.ylabel("Validation Loss")
+        plt.title("LeHDC Validatation Loss over Epochs")
+        plt.savefig("./LeHDC_val_loss.png")
+        plt.close('all')
         self.model.weight.data = best_model
         return self
 

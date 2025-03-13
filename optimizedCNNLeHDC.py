@@ -27,6 +27,8 @@ class KANCFeatureExtractor(nn.Module):
 
             nn.Conv2d(5, 10, 3),
 
+            nn.PReLU(),
+
             nn.Conv2d(10, 15, 3)
         )
         
@@ -285,8 +287,9 @@ def train(model, data, learning_rate, epochs, device, val_loader):
     return best_cnn
 
 def main():
-    num_epochs = 5
+    num_epochs = 10
     batch_sz = 32
+    learning_rate = 0.001
 
     model = KANCLeHDCModel()
 
@@ -316,11 +319,11 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
-    best_model = train(model.feature_network, trainloader, 0.001, 10, device, valloader)
-    torch.save(best_model.state_dict(), "KANC_MLP.pth")
-    print("Model saved as KANC_MLP.pth")
+    best_model = train(model.feature_network, trainloader, learning_rate, num_epochs, device, valloader)
+    torch.save(best_model.state_dict(), "CNNLeHDC.pth")
+    print("Model saved as CNNLeHDC.pth")
 
-    model.feature_network.load_state_dict(torch.load("KANC_MLP.pth", map_location=device))
+    model.feature_network.load_state_dict(torch.load("CNNLeHDC.pth", map_location=device))
 
     model.train_lehdc(trainloader, valloader)
 
