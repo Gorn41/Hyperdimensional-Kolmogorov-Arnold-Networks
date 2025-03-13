@@ -23,16 +23,16 @@ class LeHDCCNN(nn.Module):
 
         self.conv1 = nn.Conv2d(1, 5, kernel_size=3)
         self.conv2 = nn.Conv2d(5, 5, kernel_size=3)
-        self.conv3 = nn.Conv2d(5, 15, kernel_size=3)
+        self.conv3 = nn.Conv2d(5, 25, kernel_size=3)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.fc = nn.Linear(1215, 750)
+        self.fc = nn.Linear(2025, 1500)
         self.tanh = nn.Tanh()
         self.dropout = nn.Dropout(dropout_rate)
 
         self.lehdc = LeHDC(
-            n_features=750,           
+            n_features=1500,           
             n_dimensions=hdc_dimensions,
             n_classes=n_classes,
             n_levels=n_levels,             # you can kind of think of this as rounding
@@ -45,13 +45,12 @@ class LeHDCCNN(nn.Module):
         
     def forward(self, x):
         x = self.pool(self.conv1(x))
-        x = F.relu(self.conv2(x))
+        x = self.conv2(x)
         x = self.conv3(x)
         
         x = self.flatten(x)
         
         x = self.fc(x)
-        x = self.tanh(x)
         x = self.lehdc(x)
         
         return x
