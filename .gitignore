@@ -15,7 +15,7 @@ __pycache__/
 
 # omagenet folder
 imagenet/
-soap_models/data
+soap_models/data/
 
 # Distribution / packaging
 .Python
