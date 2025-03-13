@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torchhd
-from classifiers import LeHDC
+from torchhd.classifiers import LeHDC, OnlineHD
 from torch.utils.data import DataLoader, Subset
 from torchvision.datasets import MNIST
 import torchvision
@@ -54,13 +54,13 @@ class KANCLeHDCModel(nn.Module):
         self.feature_network = KANCFeatureExtractor(grid_size=grid_size)
         
         # LeHDC classifier as a separate component
-        self.lehdc = LeHDC(
+        self.lehdc = OnlineHD(
             n_features=750,
             n_dimensions=n_dimensions,
             n_classes=n_classes,
-            n_levels=n_levels,
-            min_level=-1,
-            max_level=1,
+            # n_levels=n_levels,
+            # min_level=-1,
+            # max_level=1,
             epochs=120,
             lr=0.01,
             device=torch.device("cuda" if torch.cuda.is_available() else "cpu")

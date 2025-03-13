@@ -29,7 +29,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor, LongTensor
-
+import copy
 import torchhd.functional as functional
 from torchhd.embeddings import Random, Level, Projection, Sinusoid, Density
 from torchhd.models import Centroid, IntRVFL as IntRVFLModel
@@ -640,7 +640,7 @@ class LeHDC(Classifier):
         for _ in trange(self.epochs, desc="fit"):
             self.train
             accumulated_loss = 0
-
+            best_acc = 0
             for samples, labels in data_loader:
                 samples = samples.to(self.device)
                 labels = labels.to(self.device)
@@ -664,9 +664,13 @@ class LeHDC(Classifier):
                     self.model.weight.data = self.grad_model.weight.sign()
 
             scheduler.step(accumulated_loss)
-            valacc, valloss = self.validatationtesting(val_loader, criterion)
+            val_acc, val_loss = self.validatationtesting(val_loader, criterion)
+            if val_acc > best_acc:
+                best_acc = val_acc
+                best_model = copy.deepcopy(self)
 
-
+        torch.save(best_model.state_dict(), "tempLeHDC.pth")
+        self.load_state_dict(torch.load("KANC_MLP.pth", map_location=self.device))
         return self
 
 
