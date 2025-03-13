@@ -16,50 +16,37 @@ import csv
 import pandas as pd
 from kan_convolutional.KANConv import KAN_Convolutional_Layer
 
-class KANCLeHDC(nn.Module):
-    def __init__(self, n_dimensions=10000, n_classes=10, n_levels=100, grid_size: int = 5):
-        super(KANCLeHDC, self).__init__()
+class KANCFeatureExtractor(nn.Module):
+    def __init__(self, grid_size=5):
+        super(KANCFeatureExtractor, self).__init__()
         self.flat = nn.Flatten()
         self.feature_extractor = nn.Sequential(
             KAN_Convolutional_Layer(in_channels=1,
-            out_channels= 5,
-            kernel_size= (3,3),
-            grid_size = grid_size
+            out_channels=5,
+            kernel_size=(3,3),
+            grid_size=grid_size
            ),
             
             nn.MaxPool2d(kernel_size=(2, 2)),
 
             KAN_Convolutional_Layer(in_channels=5,
-                out_channels= 5,
-                kernel_size = (5,5),
-                grid_size = grid_size
+                out_channels=5,
+                kernel_size=(5,5),
+                grid_size=grid_size
             ),
 
             KAN_Convolutional_Layer(in_channels=5,
-                out_channels= 2,
-                kernel_size = (3,3),
-                grid_size = grid_size
+                out_channels=2,
+                kernel_size=(3,3),
+                grid_size=grid_size
             )
         )
         
         self.feature_size = 98
         self.fc = nn.Linear(self.feature_size, 200)
-        self.classifier = nn.Linear(200, n_classes)
+        self.classifier = nn.Linear(200, 10)  # Default to 10 classes
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
-
-        # LeHDC credit to: https://github.com/hyperdimensional-computing/torchhd/tree/main
-        self.lehdc = LeHDC(
-            n_features=200,
-            n_dimensions=n_dimensions,
-            n_classes=n_classes,
-            n_levels=n_levels,
-            min_level=-1,
-            max_level=1,
-            device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        )
-
-        self.lehdc_trained = False
         self._initialize_weights()
 
     def _initialize_weights(self):
@@ -77,18 +64,41 @@ class KANCLeHDC(nn.Module):
 
     def forward(self, x):
         x = self.feature_extractor(x)
-
         x = self.flat(x)
-
         x = self.fc(x)
         x = self.tanh(x)
-
-        if not self.training or self.lehdc_trained:
-            x = self.lehdc(x)
-        else:
-            x = self.classifier(x)
-
         return x
+
+    def classify(self, x):
+        features = self.forward(x)
+        return self.classifier(features)
+
+
+class KANCLeHDCModel(nn.Module):
+    def __init__(self, n_dimensions=10000, n_classes=10, n_levels=100, grid_size=5):
+        super(KANCLeHDCModel, self).__init__()
+        self.feature_network = KANCFeatureExtractor(grid_size=grid_size)
+        
+        # LeHDC classifier as a separate component
+        self.lehdc = LeHDC(
+            n_features=200,
+            n_dimensions=n_dimensions,
+            n_classes=n_classes,
+            n_levels=n_levels,
+            min_level=-1,
+            max_level=1,
+            device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        )
+        
+        self.lehdc_trained = False
+
+    def forward(self, x):
+        features = self.feature_network(x)
+        
+        if not self.training or self.lehdc_trained:
+            return self.lehdc(features)
+        else:
+            return self.feature_network.classifier(features)
 
     def train_lehdc(self, train_loader):
         features = []
@@ -97,10 +107,7 @@ class KANCLeHDC(nn.Module):
         with torch.no_grad():
             for images, targets in train_loader:
                 images = images.to(next(self.parameters()).device)
-                feat = self.feature_extractor(images)
-                feat = self.flat(feat)
-                feat = self.fc(feat)
-                feat = self.tanh(feat)
+                feat = self.feature_network(images)
                 features.append(feat)
                 labels.append(targets)
 
@@ -250,7 +257,7 @@ def train(model, data, learning_rate, epochs, device, val_loader):
 
         if val_acc > best_acc:
             best_acc = val_acc
-            best_cnn = copy.deepcopy(model.state_dict())
+            best_cnn = copy.deepcopy(model)
 
         print(f"Epoch {epoch+1}/{epochs}, Validation Accuracy: {val_acc:.2f}%")
 
@@ -307,11 +314,11 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
-    best_model = train(model, trainloader, 0.001, 10, device, valloader)
+    best_model = train(model.feature_network, trainloader, 0.001, 10, device, valloader)
     torch.save(best_model.state_dict(), "KANC_MLP.pth")
     print("Model saved as KANC_MLP.pth")
 
-    model.load_state_dict(torch.load("KANC_MLP.pth", map_location=device))
+    model.feature_network.load_state_dict(torch.load("KANC_MLP.pth", map_location=device))
 
     model.train_lehdc(trainloader)
 
