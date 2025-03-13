@@ -51,7 +51,7 @@ class LeHDCCNN(nn.Module):
         x = self.flatten(x)
         
         x = self.fc(x)
-        x = self.dropout(x)
+        x = self.tanh(x)
         x = self.lehdc(x)
         
         return x
