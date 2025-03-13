@@ -243,7 +243,7 @@ def train(model, data, learning_rate, epochs, device, val_loader):
             images = images.to(device)
             labels = labels.to(device)
             optimizer.zero_grad()
-            outputs = model.classifier(images)
+            outputs = model.classify(images)
             loss = loss_func(outputs, labels)
             total_loss += loss.item() * images.size(0)
             loss.backward()
