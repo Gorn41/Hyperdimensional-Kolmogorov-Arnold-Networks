@@ -236,7 +236,6 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     
     best_val_acc = 0
-    
     for epoch in range(num_epochs):
         train_loss, train_acc = train(model, train_loader, optimizer, criterion, device, epoch+1)
         val_loss, val_acc = valtest(model, valloader, criterion, device)
