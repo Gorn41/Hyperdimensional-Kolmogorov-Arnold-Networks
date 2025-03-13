@@ -112,7 +112,15 @@ class KANCLeHDCModel(nn.Module):
 
         features = torch.cat(features, dim=0)
         labels = torch.cat(labels, dim=0)
-        lehdc_loader = [(features, labels)]
+
+        dataset = torch.utils.data.TensorDataset(features.to('cuda'), labels.to('cuda'))
+    
+        lehdc_loader = torch.utils.data.DataLoader(
+        dataset, 
+        batch_size=32,  
+        shuffle=True   
+        )
+
         self.lehdc.fit(lehdc_loader)
         self.lehdc_trained = True
 
