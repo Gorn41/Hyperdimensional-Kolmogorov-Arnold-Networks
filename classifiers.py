@@ -665,6 +665,7 @@ class LeHDC(Classifier):
 
             scheduler.step(accumulated_loss)
             val_acc, val_loss = self.validatationtesting(val_loader, criterion)
+            print(f"val acc: {val_acc}, val loss: {val_loss}")
             if val_acc > best_acc:
                 best_acc = val_acc
                 best_model = copy.deepcopy(self)
