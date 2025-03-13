@@ -13,6 +13,9 @@ __pycache__/
 .webp
 .csv
 
+# omagenet folder
+imagenet/
+
 # Distribution / packaging
 .Python
 build/
