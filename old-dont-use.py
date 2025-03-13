@@ -286,7 +286,7 @@ def main():
     num_epochs = 5
     batch_sz = 32
 
-    model = KANCLeHDC()
+    model = KANCLeHDCModel()
 
     transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(), torchvision.transforms.Normalize((0.1307,), (0.3081,))])
     # train_dataset = MNIST("./data", train=True, transform=transform, download=True)
