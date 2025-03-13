@@ -229,7 +229,7 @@ def main():
     num_epochs = 10
     hdc_dimensions = 10000
     dropout_rate = 0.0
-    n_levels = 150 # you can kind of think of this as rounding sensitivity
+    n_levels = 200 # you can kind of think of this as rounding sensitivity
     
     train_loader, valloader, test_loader = load_mnist_data(batch_size)
     model = LeHDCCNN(hdc_dimensions=hdc_dimensions, n_classes=10, dropout_rate=dropout_rate, n_levels=n_levels).to(device)
