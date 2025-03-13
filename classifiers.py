@@ -640,10 +640,12 @@ class LeHDC(Classifier):
         )
         valaccs = []
         vallosses = []
+        trainlosses = []
         for _ in trange(self.epochs, desc="fit"):
             self.train
             accumulated_loss = 0
             best_acc = 0
+            num_batches = 0
             for samples, labels in data_loader:
                 samples = samples.to(self.device)
                 labels = labels.to(self.device)
@@ -651,7 +653,7 @@ class LeHDC(Classifier):
                 logits = self(samples)
                 loss = criterion(logits, labels)
                 accumulated_loss += loss.detach().item()
-
+                num_batches += 1
                 # Zero out all the gradients
                 self.grad_model.zero_grad()
                 self.model.zero_grad()
@@ -671,22 +673,26 @@ class LeHDC(Classifier):
             print(f"val acc: {val_acc}, val loss: {val_loss}")
             valaccs.append(val_acc)
             vallosses.append(val_loss)
+            avg_train_loss = accumulated_loss / num_batches
+            trainlosses.append(avg_train_loss)
             if val_acc > best_acc:
                 best_acc = val_acc
                 best_model = self.model.weight.data
 
         plt.figure()
-        plt.plot(np.arange(1, epoch + 2), accs)
+        plt.plot(np.arange(1, self.epochs + 1), valaccs)
         plt.xlabel("Epoch")
         plt.ylabel("Validation Accuracy")
         plt.title("LeHDC Valiidation Accuracy over Epochs")
         plt.savefig("./LeHDC_val_acc.png")
         plt.figure()
-        plt.plot(np.arange(1, epoch + 2), val_losses)
+        plt.plot(np.arange(1, self.epochs + 1), trainlosses, label='Training Loss')
+        plt.plot(np.arange(1, self.epochs + 1), vallosses, label='Validation Loss')
         plt.xlabel("Epoch")
-        plt.ylabel("Validation Loss")
-        plt.title("LeHDC Validatation Loss over Epochs")
-        plt.savefig("./LeHDC_val_loss.png")
+        plt.ylabel("Loss")
+        plt.title("LeHDC Training and Validation Loss over Epochs")
+        plt.legend()
+        plt.savefig("./LeHDC_train_val_loss.png")
         plt.close('all')
         self.model.weight.data = best_model
         return self

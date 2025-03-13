@@ -63,9 +63,9 @@ class KANCLeHDCModel(nn.Module):
             n_levels=n_levels,
             min_level=-1,
             max_level=1,
-            epochs=200,
+            epochs=20,
             dropout_rate=0.2,
-            lr=0.001,
+            lr=0.01,
             device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
         )
         
@@ -266,23 +266,19 @@ def train(model, data, learning_rate, epochs, device, val_loader):
         print(f"Epoch {epoch+1}/{epochs}, Validation Accuracy: {val_acc:.2f}%")
 
         plt.figure()
-        plt.plot(np.arange(1, epoch + 2), accs)
+        plt.plot(np.arange(1, epoch + 1), accs)
         plt.xlabel("Epoch")
         plt.ylabel("Validation Accuracy")
-        plt.title("KANC Baseline Validatation Accuracy over Epochs")
-        plt.savefig("./kanc_baseline_fashionmnist_val_acc.png")
+        plt.title("CNN Baseline Validation Accuracy over Epochs")
+        plt.savefig("./cnn_baseline_fashionmnist_val_acc.png")
         plt.figure()
-        plt.plot(np.arange(1, epoch + 2), losses)
+        plt.plot(np.arange(1, epochs + 1), losses, label='Training Loss')
+        plt.plot(np.arange(1, epochs + 1), val_losses, label='Validation Loss')
         plt.xlabel("Epoch")
-        plt.ylabel("Training Loss")
-        plt.title("KANC Baseline Training Loss over Epochs")
-        plt.savefig("./kanc_baseline_fashionmnist_training_loss.png")
-        plt.figure()
-        plt.plot(np.arange(1, epoch + 2), val_losses)
-        plt.xlabel("Epoch")
-        plt.ylabel("Validation Loss")
-        plt.title("KANC Baseline Validatation Loss over Epochs")
-        plt.savefig("./kanc_baseline_fashionmnist_val_loss.png")
+        plt.ylabel("Loss")
+        plt.title("CNN Baseline Training and Validation Loss over Epochs")
+        plt.legend()
+        plt.savefig("./cnn_baseline_train_val_loss.png")
         plt.close('all')
     return best_cnn
 
