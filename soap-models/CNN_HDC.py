@@ -147,13 +147,11 @@ def test(name, model, testloader, device):
         for images, labels in tqdm.tqdm(testloader, total=batch_size):
             images, labels = images.to(device), labels.to(device)
             outputs = model.forward(images)
-            # print(outputs)
-            # print(outputs.shape)
+
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
             correct += (predicted.to('cuda') == labels).sum().item()
-            # loss = loss_func(outputs.float(), labels)
-            # total_loss += loss.item() * images.size(0)
+            
             all_preds.extend(predicted.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 

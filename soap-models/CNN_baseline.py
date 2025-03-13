@@ -15,30 +15,29 @@ import pandas as pd
 class CNN(nn.Module):
     def __init__(self, dropout_rate=0.1):
         super(CNN, self).__init__()
-        self.conv1 = nn.Conv2d(1, 5, kernel_size=3)
-        self.conv2 = nn.Conv2d(5, 5, kernel_size=3)
-        self.conv3 = nn.Conv2d(5, 15, kernel_size=3)
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)  # Change input channels to 3 (RGB)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.fc = nn.Linear(1215, 750)
-        self.tanh = nn.Tanh()
+        # Compute the correct input size for the fully connected layer
+        self.fc1 = nn.Linear(64 * 4 * 4, 512)  # CIFAR-100 input size
         self.dropout = nn.Dropout(dropout_rate)
+        self.fc2 = nn.Linear(512, 100)  # Output 100 classes for CIFAR-100
 
-        self.fc2 = nn.Linear(750, 10)
-
-        
     def forward(self, x):
-        x = self.pool(self.conv1(x))
-        x = self.conv2(x)
-        x = self.conv3(x)
-        
+        x = self.pool(F.relu(self.conv1(x)))  # Apply ReLU activation
+        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(F.relu(self.conv3(x)))
+
         x = self.flatten(x)
-        
-        x = self.fc(x)
+
+        x = F.relu(self.fc1(x))
         x = self.dropout(x)
         x = self.fc2(x)
-        
+
         return x
 
 def load_mnist_data(batch_size=34):
@@ -47,8 +46,8 @@ def load_mnist_data(batch_size=34):
         transforms.Normalize((0.1307,), (0.3081,))
     ])
     
-    train_data = torchvision.datasets.FashionMNIST(root='data', train=True, download=True, transform=transform)
-    other_data = torchvision.datasets.FashionMNIST(root='data', train=False, download=True, transform=transform)
+    train_data = torchvision.datasets.CIFAR100(root='data', train=True, download=True, transform=transform)
+    other_data = torchvision.datasets.CIFAR100(root='data', train=False, download=True, transform=transform)
     val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
