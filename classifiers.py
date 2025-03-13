@@ -668,10 +668,9 @@ class LeHDC(Classifier):
             print(f"val acc: {val_acc}, val loss: {val_loss}")
             if val_acc > best_acc:
                 best_acc = val_acc
-                best_model = copy.deepcopy(self)
+                best_model = self.model.weight.data
 
-        torch.save(best_model.state_dict(), "tempLeHDC.pth")
-        self.load_state_dict(torch.load("KANC_MLP.pth", map_location=self.device))
+        self.model.weight.data = best_model
         return self
 
 
