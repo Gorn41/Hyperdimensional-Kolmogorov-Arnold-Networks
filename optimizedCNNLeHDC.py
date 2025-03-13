@@ -137,7 +137,7 @@ def validate(model, val_loader, loss_func, device):
             total_loss += loss.item() * images.size(0)
     return (100 * correct / total, total_loss / len(val_loader.dataset))
 
-def test(model, testloader, device):
+def test(name, model, testloader, device):
     model.eval()
     correct = 0
     total = 0
@@ -168,18 +168,18 @@ def test(model, testloader, device):
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
-    plt.title('HDC-reinforced-KANC Confusion Matrix (No Noise)')
-    plt.savefig("./HDC-reinforced-KANC_fashionmnist_confusion_matrix_no_noise.png")
-    plt.show()
+    plt.title(f'{name} Confusion Matrix (No Noise)')
+    plt.savefig(f"./{name}_confusion_matrix_no_noise.png")
 
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open("./HDC-reinforced-KANC_classification_report_no_noise.txt", 'a', newline='') as file:
+    with open(f"./{name}_classification_report_no_noise.txt", 'a', newline='') as file:
+        file.truncate(0)
         file.write(f'Test Accuracy: {100 * correct / total:.2f}%, Test Loss: {test_loss}')
         file.write(classification_report(all_labels, all_preds))
     return
 
-def test_with_noise(model, testloader, device, noise_std=0.1):
+def test_with_noise(name, model, testloader, device, noise_std=0.1):
     model.eval()
     correct = 0
     total = 0
@@ -218,15 +218,14 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(10), yticklabels=range(10))
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
-    plt.title(f'HDC-reinforced-KANC Confusion Matrix (Noise Std = {noise_std})')
-    plt.savefig(f"./HDC-reinforced-KANC_fashionmnist_confusion_matrix_noise_{noise_std}.png")
+    plt.title(f'{name} Confusion Matrix (Noise Std = {noise_std})')
+    plt.savefig(f"./{name}_confusion_matrix_noise_{noise_std}.png")
     plt.show()
 
     # Classification Report
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open(f"./HDC-reinforced-KANC_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
-        # clear file
+    with open(f"./{name}_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
         file.truncate(0)
         file.write(f'Test Accuracy: {accuracy:.2f}%, Test Loss: {test_loss}\n')
         file.write(classification_report(all_labels, all_preds))
@@ -239,7 +238,7 @@ def train(model, data, learning_rate, epochs, device, val_loader):
     losses = []
     best_acc = 0
     loss_func = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-5)
     batch_size = len(data)
     for epoch in tqdm.tqdm(range(epochs)):
         model.train()
