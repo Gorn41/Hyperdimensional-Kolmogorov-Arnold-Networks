@@ -282,44 +282,29 @@ def train(model, data, learning_rate, epochs, device, val_loader):
         plt.close('all')
     return best_cnn
 
-def main():
+def main(trainingmode=False):
     num_epochs = 10
     batch_sz = 32
     learning_rate = 0.001
 
     model = KANCLeHDCModel()
-
-    transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(), torchvision.transforms.Normalize((0.1307,), (0.3081,))])
-    # train_dataset = MNIST("./data", train=True, transform=transform, download=True)
-
-
-    # dataset_size = len(train_dataset)
-    # train_subset = Subset(train_dataset, range(dataset_size // 50))
-
-    # train_loader = DataLoader(train_subset, batch_size=64, shuffle=True)
-    # test_dataset = MNIST("./data", train=False, transform=transform, download=True)
-
-    # dataset_size = len(test_dataset)
-    # test_subset = Subset(test_dataset, range(dataset_size // 50))
-    # test_loader = DataLoader(test_subset, batch_size=64, shuffle=False)
-
-
-    train_data = torchvision.datasets.FashionMNIST(root='data', train=True, download=True, transform=transform)
-    other_data = torchvision.datasets.FashionMNIST(root='data', train=False, download=True, transform=transform)
-    val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
-
-    trainloader = torch.utils.data.DataLoader(train_data, batch_size=batch_sz, shuffle=True)
-    valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_sz, shuffle=True)
-    testloader = torch.utils.data.DataLoader(test_data, batch_size=batch_sz)
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
+    if trainingmode:
+        transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(), torchvision.transforms.Normalize((0.1307,), (0.3081,))])
+        train_data = torchvision.datasets.FashionMNIST(root='data', train=True, download=True, transform=transform)
+        other_data = torchvision.datasets.FashionMNIST(root='data', train=False, download=True, transform=transform)
+        val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
 
-    best_model = train(model.feature_network, trainloader, learning_rate, num_epochs, device, valloader)
-    torch.save(best_model.state_dict(), "CNNLeHDC.pth")
-    print("Model saved as CNNLeHDC.pth")
+        trainloader = torch.utils.data.DataLoader(train_data, batch_size=batch_sz, shuffle=True)
+        valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_sz, shuffle=True)
+        testloader = torch.utils.data.DataLoader(test_data, batch_size=batch_sz)
 
-    model.feature_network.load_state_dict(torch.load("CNNLeHDC.pth", map_location=device))
+        best_model = train(model.feature_network, trainloader, learning_rate, num_epochs, device, valloader)
+        torch.save(best_model.state_dict(), "CNN.pth")
+        print("Model saved as CNN.pth")
+
+    model.feature_network.load_state_dict(torch.load("CNN.pth", map_location=device))
 
     model.train_lehdc(trainloader, valloader)
 
