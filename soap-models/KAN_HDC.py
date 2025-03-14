@@ -260,7 +260,7 @@ def load_Imagenette_data(batch_size):
 
 def main():
      # Hyperparams
-    batch_size = 16
+    batch_size = 8
 
     model = KAN_HDC()
     train_loader, valloader, test_loader = load_Imagenette_data(batch_size)
