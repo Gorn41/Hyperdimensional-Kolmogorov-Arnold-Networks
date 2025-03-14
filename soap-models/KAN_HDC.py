@@ -14,44 +14,65 @@ from sklearn.metrics import confusion_matrix, classification_report
 import seaborn as sns
 import csv
 import pandas as pd
+from util.kan_convolutional.KANConv import KAN_Convolutional_Layer
 
-# Same as the CNN class in soap-models/CNN_baseline.py, except the classifier layer is removed
-# This is a "template" class that can be used to create a CNN model with a custom classifier
+# Same as the KAN class in soap-models/KAN_baseline.py, except the classifier layer is removed
+# This is a "template" class that can be used to create a KAN model with a custom classifier
 # The custom classifier is the LeHDC classifier in this case
-class CNNFeatureExtractor(nn.Module):
+class KANFeatureExtractor(nn.Module):
     def __init__(self, grid_size=5):
-        super(CNNFeatureExtractor, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, kernel_size=5, padding=2)  # 64x64 -> 64x64
-        self.conv2 = nn.Conv2d(6, 16, kernel_size=5)  # 32x32 -> 28x28
-        self.fc1 = nn.Linear(16 * 14 * 14, 256)  # Increased from 256 to 512
-        self.fc2 = nn.Linear(256, 10) # Increased from 84 to 128
-        self.pool = nn.MaxPool2d(2, 2)  # 64x64 -> 32x32
+        super(KANFeatureExtractor, self).__init__()
+        self.conv1 = KAN_Convolutional_Layer(in_channels=3,
+            out_channels= 16,
+            kernel_size= (3,3),
+            grid_size = grid_size
+        )
+        self.conv2 = KAN_Convolutional_Layer(in_channels=16,
+            out_channels= 32,
+            kernel_size= (3,3),
+            grid_size = grid_size
+        )
+        self.conv3 = KAN_Convolutional_Layer(in_channels=32,
+            out_channels= 64,
+            kernel_size= (3,3),
+            grid_size = grid_size
+        )
+        self.pool = nn.MaxPool2d(2, 2)
+        self.flatten = nn.Flatten()
+
+        self.fc1 = nn.Linear(64 * 20 * 20, 512)  # Adjust if image size changes
+        self.classifier = nn.Linear(512, 10)  # Output 10 classes for Imagenette
+    
+        # Chopped off the classifier layer
+
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = torch.flatten(x, 1)  # Flatten
-        x = F.relu(self.fc1(x))
-        return x
+        x = self.pool(self.conv1(x)) # Apply ReLU activation
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.flatten(x)
+        x = self.fc1(x)
+        # Chopped off the classifier layer
 
+        return x
         
-# This class is a combination of the CNNFeatureExtractor and LeHDC classes
-class CNN_HDC(nn.Module):
-    def __init__(self, n_dimensions=20000, n_classes=10, n_levels=50, grid_size=5):
-        super(CNN_HDC, self).__init__()
-        self.feature_network = CNNFeatureExtractor(grid_size=grid_size)
+# This class is a combination of the KANFeatureExtractor and LeHDC classes
+class KAN_HDC(nn.Module):
+    def __init__(self, n_dimensions=10000, n_classes=100, n_levels=50, grid_size=5):
+        super(KAN_HDC, self).__init__()
+        self.feature_network = KANFeatureExtractor(grid_size=grid_size)
         
-        # Update LeHDC classifier input size to match new fc1 output size (512)
+        # LeHDC classifier as a separate component
         self.lehdc = LeHDC(
-            n_features=256,  # Updated to match CNNFeatureExtractor
+            n_features=750,
             n_dimensions=n_dimensions,
             n_classes=n_classes,
             n_levels=n_levels,
             min_level=-1,
             max_level=1,
-            epochs=20,
+            epochs=40,
             dropout_rate=0.2,
-            lr=0.005,
+            lr=0.01,
             device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
         )
         
@@ -126,7 +147,7 @@ def validate(model, val_loader, loss_func, device):
 
     return (100 * correct / total, total_loss / len(val_loader.dataset))
 
-def test(folder, name, model, testloader, device):
+def test(name, folder, model, testloader, device):
     model.eval()
     correct = 0
     total = 0
@@ -166,7 +187,7 @@ def test(folder, name, model, testloader, device):
         file.write(classification_report(all_labels, all_preds))
     return
 
-def test_with_noise(folder, name, model, testloader, device, noise_std=0.1):
+def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
     model.eval()
     correct = 0
     total = 0
@@ -219,44 +240,45 @@ def test_with_noise(folder, name, model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def load_eurosat_data(batch_size=64):
+def load_Imagenette_data(batch_size=34):
     transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        transforms.Resize((160, 160)),  # Resize all images to 160x160
+        transforms.ToTensor(),  # Convert images to PyTorch tensors
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Standard normalization
     ])
-    dataset = datasets.EuroSAT(root='data', download=True, transform=transform)
-    train_size = int(0.7 * len(dataset))
-    val_size = int(0.15 * len(dataset))
-    test_size = len(dataset) - train_size - val_size
-    train_data, val_data, test_data = torch.utils.data.random_split(dataset, [train_size, val_size, test_size])
     
-    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_data, batch_size=batch_size)
-    test_loader = DataLoader(test_data, batch_size=batch_size)
+    train_data = torchvision.datasets.Imagenette(root='data', split="train", download=True, transform=transform)
+    other_data = torchvision.datasets.Imagenette(root='data', split="val", download=True, transform=transform)
+    val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
+
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
+    valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_size, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size)
     
-    return train_loader, val_loader, test_loader
+    return train_loader, valloader, test_loader
+
 
 def main():
      # Hyperparams
     batch_size = 32
 
-    model = CNN_HDC()
-    train_loader, valloader, test_loader = load_eurosat_data(batch_size)
+    model = KAN_HDC()
+    train_loader, valloader, test_loader = load_mnist_data(batch_size)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
-    model.feature_network.load_state_dict(torch.load("./Eurosat_results/CNN_baseline_results/Eurosat_baselineCNN_best.pth", map_location=device))
+    model.feature_network.load_state_dict(torch.load("KAN_baseline_results/KAN_baseline.pth", map_location=device))
 
     model.train_lehdc(train_loader, valloader)
 
     model.eval()
 
-    test("Eurosat_results", "Eurosat_CNN_HDC", model, test_loader, device)
-    test_with_noise("Eurosat_results", "Eurosat_CNN_HDC", model, test_loader, device, noise_std=0.1)
-    test_with_noise("Eurosat_results", "Eurosat_CNN_HDC", model, test_loader, device, noise_std=0.4)
-    test_with_noise("Eurosat_results", "Eurosat_CNN_HDC", model, test_loader, device, noise_std=0.7)
-    test_with_noise("Eurosat_results", "Eurosat_CNN_HDC", model, test_loader, device, noise_std=1.0)
+    test("KAN_HDC", "KAN_HDC_results", model, test_loader, device)
+    test_with_noise("KAN_HDC", "KAN_HDC_results", model, test_loader, device, noise_std=0.1)
+    test_with_noise("KAN_HDC", "KAN_HDC_results", model, test_loader, device, noise_std=0.4)
+    test_with_noise("KAN_HDC", "KAN_HDC_results", model, test_loader, device, noise_std=0.7)
+    test_with_noise("KAN_HDC", "KAN_HDC_results", model, test_loader, device, noise_std=1.0)
 
 if __name__ == '__main__':
     main()
