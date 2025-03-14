@@ -52,7 +52,7 @@ class CNN_HDC(nn.Module):
         
         # LeHDC classifier as a separate component
         self.lehdc = LeHDC(
-            n_features=98,
+            n_features=256,
             n_dimensions=n_dimensions,
             n_classes=n_classes,
             n_levels=n_levels,
