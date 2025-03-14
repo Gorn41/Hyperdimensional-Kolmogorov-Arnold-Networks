@@ -184,8 +184,9 @@ def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
 
 def load_Imagenette_data(batch_size=34):
     transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
+        transforms.Resize((160, 160)),  # Resize all images to 160x160
+        transforms.ToTensor(),  # Convert images to PyTorch tensors
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Standard normalization
     ])
     
     train_data = torchvision.datasets.Imagenette(root='data', split="train", download=True, transform=transform)
