@@ -18,12 +18,12 @@ class KAN(nn.Module):
         super(KAN, self).__init__()
         self.conv1 = KAN_Convolutional_Layer(in_channels=3,
             out_channels= 4,
-            kernel_size= (5,5),
+            kernel_size= (3,3),
             grid_size = grid_size
         )
         self.conv2 = KAN_Convolutional_Layer(in_channels=4,
             out_channels= 6,
-            kernel_size= (10,10),
+            kernel_size= (3,3),
             grid_size = grid_size
         )
         self.pool = nn.MaxPool2d(2, 2)
