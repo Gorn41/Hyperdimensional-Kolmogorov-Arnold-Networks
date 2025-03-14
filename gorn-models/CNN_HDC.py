@@ -22,14 +22,14 @@ class CNNFeatureExtractor(nn.Module):
     def __init__(self, grid_size=5):
         super(CNNFeatureExtractor, self).__init__()
         self.conv1 = nn.Conv2d(1, 5, kernel_size=3)  # Change input channels to 3 (RGB)
-        self.conv2 = nn.Conv2d(5, 10, kernel_size=3)
-        self.conv3 = nn.Conv2d(10, 15, kernel_size=3)
+        self.conv2 = nn.Conv2d(5, 5, kernel_size=3)
+        self.conv3 = nn.Conv2d(5, 2, kernel_size=3)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.feature_size = 1215
-        self.fc1 = nn.Linear(self.feature_size, 750)
-        self.classifier = nn.Linear(750, 10)  # Output 100 classes for CIFAR-100
+        self.feature_size = 162
+        self.fc1 = nn.Linear(self.feature_size, 96)
+        self.classifier = nn.Linear(96, 10)  # Output 100 classes for CIFAR-100
     
         # Chopped off the classifier layer
 
@@ -46,18 +46,18 @@ class CNNFeatureExtractor(nn.Module):
         
 # This class is a combination of the CNNFeatureExtractor and LeHDC classes
 class CNN_HDC(nn.Module):
-    def __init__(self, n_dimensions=1000, n_classes=10, n_levels=100, grid_size=5):
+    def __init__(self, n_dimensions=1000, n_classes=10, n_levels=50, grid_size=5):
         super(CNN_HDC, self).__init__()
         self.feature_network = CNNFeatureExtractor(grid_size=grid_size)
         
         # LeHDC classifier as a separate component
         self.lehdc = LeHDC(
-            n_features=750,
+            n_features=96,
             n_dimensions=n_dimensions,
             n_classes=n_classes,
             n_levels=n_levels,
-            min_level=-100,
-            max_level=100,
+            min_level=-1,
+            max_level=1,
             epochs=50,
             dropout_rate=0.3,
             lr=0.001,
