@@ -231,7 +231,7 @@ def main():
 
     model.feature_network.load_state_dict(torch.load("./Eurosat_results/Eurosat_baselineCNN_best.pth", map_location=device))
 
-    model.train_lehdc(train_loader, valloader)
+    model.train_hdc(train_loader, valloader)
 
     model.eval()
 
