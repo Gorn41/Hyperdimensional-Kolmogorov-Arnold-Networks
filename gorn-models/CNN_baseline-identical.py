@@ -16,8 +16,8 @@ import pandas as pd
 class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
-        self.conv1 = nn.Conv2d(1, 2, kernel_size=3)  
-        self.conv2 = nn.Conv2d(2, 2, kernel_size=3)
+        self.conv1 = nn.Conv2d(1, 2, kernel_size=3, bias=False)  
+        self.conv2 = nn.Conv2d(2, 2, kernel_size=3, bias=False)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
@@ -227,7 +227,7 @@ def main():
         
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            torch.save(model.state_dict(), 'CNN_baseline_results/CNN_baseline.pth')
+            torch.save(model.state_dict(), 'CNN_identical_baseline_results/CNN_identical_baseline.pth')
             print(f'Model saved with val accuracy: {val_acc:.2f}%')
     
     print(f'Best val accuracy: {best_val_acc:.2f}%')
@@ -254,17 +254,17 @@ def main():
     plt.title('Training and Validation Accuracy')
     
     # Save plot
-    plt.savefig('CNN_baseline_results/training_plot.png')
+    plt.savefig('CNN_identical_baseline_results/training_plot.png')
     plt.show()
     plt.close('all')
-    model.load_state_dict(torch.load("CNN_baseline_results/CNN_baseline.pth", map_location=device, weights_only=False))
+    model.load_state_dict(torch.load("CNN_identical_baseline_results/CNN_identical_baseline.pth", map_location=device, weights_only=False))
     model.eval()
 
-    test("CNN_baseline", "CNN_baseline_results", model, test_loader, device)
-    test_with_noise("CNN_baseline", "CNN_baseline_results", model, test_loader, device, noise_std=0.1)
-    test_with_noise("CNN_baseline", "CNN_baseline_results",  model, test_loader, device, noise_std=0.4)
-    test_with_noise("CNN_baseline", "CNN_baseline_results", model, test_loader, device, noise_std=0.7)
-    test_with_noise("CNN_baseline", "CNN_baseline_results", model, test_loader, device, noise_std=1.0)
+    test("CNN_identical_baseline", "CNN_identical_baseline_results", model, test_loader, device)
+    test_with_noise("CNN_identical_baseline", "CNN_identical_baseline_results", model, test_loader, device, noise_std=0.1)
+    test_with_noise("CNN_identical_baseline", "CNN_identical_baseline_results",  model, test_loader, device, noise_std=0.4)
+    test_with_noise("CNN_identical_baseline", "CNN_identical_baseline_results", model, test_loader, device, noise_std=0.7)
+    test_with_noise("CNN_identical_baseline", "CNN_identical_baseline_results", model, test_loader, device, noise_std=1.0)
 
 if __name__ == '__main__':
     main()
