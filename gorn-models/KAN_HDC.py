@@ -37,7 +37,7 @@ class KANFeatureExtractor(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.classifier = nn.Linear(49, 10)  # Output 100 classes for CIFAR-100
+        self.classifier = nn.Linear(98, 10)  # Output 100 classes for CIFAR-100
     
         # Chopped off the classifier layer
 
