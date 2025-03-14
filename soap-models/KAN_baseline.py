@@ -16,13 +16,18 @@ from util.kan_convolutional.KANConv import KAN_Convolutional_Layer
 class KAN(nn.Module):
     def __init__(self, grid_size: int = 5):
         super(KAN, self).__init__()
-        self.conv1 = KAN_Convolutional_Layer(in_channels=3,
-            out_channels= 16,
+        self.conv1 = KAN_Convolutional_Layer(in_channels=1,
+            out_channels= 5,
             kernel_size= (3,3),
             grid_size = grid_size
         )
-        self.conv2 = KAN_Convolutional_Layer(in_channels=16,
-            out_channels= 32,
+        self.conv2 = KAN_Convolutional_Layer(in_channels=5,
+            out_channels= 10,
+            kernel_size= (3,3),
+            grid_size = grid_size
+        )
+        self.conv3 = KAN_Convolutional_Layer(in_channels=10,
+            out_channels= 15,
             kernel_size= (3,3),
             grid_size = grid_size
         )
@@ -211,7 +216,7 @@ def main():
     print(f"Using device: {device}")
     
     # Hyperparams
-    batch_size = 4
+    batch_size = 32
     learning_rate = 0.001
     num_epochs = 5
     
