@@ -16,18 +16,18 @@ import pandas as pd
 class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)  # Change input channels to 3 (RGB)
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)  
         self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
         self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        # Compute the correct input size for the fully connected layer
-        self.fc1 = nn.Linear(64 * 4 * 4, 512)  # CIFAR-100 input size
-        self.classifier = nn.Linear(512, 100)  # Output 100 classes for CIFAR-100
+        # Adjusting input size for the fully connected layer based on Imagenette resolution (assume 160x160)
+        self.fc1 = nn.Linear(64 * 20 * 20, 512)  # Adjust if image size changes
+        self.classifier = nn.Linear(512, 10)  # Output 10 classes for Imagenette
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))  # Apply ReLU activation
+        x = self.pool(F.relu(self.conv1(x)))  
         x = self.pool(F.relu(self.conv2(x)))
         x = self.pool(F.relu(self.conv3(x)))
         x = self.flatten(x)
@@ -182,14 +182,14 @@ def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def load_CIFAR100_data(batch_size=34):
+def load_Imagenette_data(batch_size=34):
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
     ])
     
-    train_data = torchvision.datasets.CIFAR100(root='data', train=True, download=True, transform=transform)
-    other_data = torchvision.datasets.CIFAR100(root='data', train=False, download=True, transform=transform)
+    train_data = torchvision.datasets.Imagenette(root='data', split="train", download=True, transform=transform)
+    other_data = torchvision.datasets.Imagenette(root='data', split="val", download=True, transform=transform)
     val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
@@ -210,7 +210,7 @@ def main():
     dropout_rate = 0.0
     n_levels = 150 # you can kind of think of this as rounding sensitivity
     
-    train_loader, valloader, test_loader = load_CIFAR100_data(batch_size)
+    train_loader, valloader, test_loader = load_Imagenette_data(batch_size)
     model = CNN().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
