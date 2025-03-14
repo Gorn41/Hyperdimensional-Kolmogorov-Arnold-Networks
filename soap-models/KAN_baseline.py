@@ -26,15 +26,10 @@ class KAN(nn.Module):
             kernel_size= (3,3),
             grid_size = grid_size
         )
-        self.conv3 = KAN_Convolutional_Layer(in_channels=16,
-            out_channels= 32,
-            kernel_size= (3,3),
-            grid_size = grid_size
-        )
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.fc1 = nn.Linear(64 * 20 * 20, 512)  # Adjust if image size changes
+        self.fc1 = nn.Linear(16 * 38 * 38, 512)
         self.classifier = nn.Linear(512, 10)  # Output 10 classes for Imagenette
 
     def forward(self, x):
