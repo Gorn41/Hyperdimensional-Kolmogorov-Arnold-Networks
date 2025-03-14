@@ -17,12 +17,12 @@ class KAN(nn.Module):
     def __init__(self, grid_size: int = 5):
         super(KAN, self).__init__()
         self.conv1 = KAN_Convolutional_Layer(in_channels=3,
-            out_channels= 4,
+            out_channels= 16,
             kernel_size= (3,3),
             grid_size = grid_size
         )
-        self.conv2 = KAN_Convolutional_Layer(in_channels=4,
-            out_channels= 6,
+        self.conv2 = KAN_Convolutional_Layer(in_channels=16,
+            out_channels= 32,
             kernel_size= (3,3),
             grid_size = grid_size
         )
@@ -191,7 +191,7 @@ def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
 
 def load_Imagenette_data(batch_size):
     transform = transforms.Compose([
-        transforms.Resize((160, 160)),  # Resize all images to 160x160
+        transforms.Resize((32, 32)),  # Resize all images to 32x32
         transforms.ToTensor(),  # Convert images to PyTorch tensors
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Standard normalization
     ])
