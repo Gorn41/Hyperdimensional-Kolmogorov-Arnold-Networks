@@ -238,7 +238,7 @@ def load_eurosat_data(batch_size=64):
 
 def main():
      # Hyperparams
-    batch_size = 32
+    batch_size = 64
 
     model = CNN_HDC()
     train_loader, valloader, test_loader = load_eurosat_data(batch_size)

@@ -23,13 +23,13 @@ class KAN(nn.Module):
             padding=(1,1)
         )
         self.conv2 = KAN_Convolutional_Layer(in_channels=3,
-            out_channels= 3,
+            out_channels= 2,
             kernel_size= (3,3),
             grid_size = grid_size,
             padding=(1,1)
         )
         self.conv3 = KAN_Convolutional_Layer(in_channels=3,
-            out_channels= 3,
+            out_channels= 2,
             kernel_size= (3,3),
             grid_size = grid_size,
             padding=(1,1)
@@ -38,7 +38,7 @@ class KAN(nn.Module):
         
         self.flatten = nn.Flatten()
         
-        self.classifier = nn.Linear(192, 10)  # Output 10 classes for Eurosat
+        self.classifier = nn.Linear(128, 10)  # Output 10 classes for Eurosat
 
     def forward(self, x):
         x = self.pool(self.conv1(x))  # Apply conv1 and pool
