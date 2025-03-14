@@ -11,31 +11,52 @@ import numpy as np
 from sklearn.metrics import confusion_matrix, classification_report
 import seaborn as sns
 import pandas as pd
+from util.kan_convolutional.KANConv import KAN_Convolutional_Layer
 
-# CNN baseline model
-class CNN(nn.Module):
-    def __init__(self):
-        super(CNN, self).__init__()
-        self.conv1 = nn.Conv2d(1, 5, kernel_size=3)  
-        self.conv2 = nn.Conv2d(5, 10, kernel_size=3)
-        self.conv3 = nn.Conv2d(10, 15, kernel_size=3)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.flatten = nn.Flatten()
+# KAN baseline model
+class KANC(nn.Module):
+    def __init__(self,grid_size: int = 5):
+        super(KANC, self).__init__()
+        self.conv1 = KAN_Convolutional_Layer(
+            in_channels=3,  # Imagenette is RGB (3 channels)
+            out_channels=8,  
+            kernel_size=(3, 3),
+            grid_size=grid_size
+        )
 
-        # Adjusting input size for the fully connected layer based on Imagenette resolution (assume 160x160)
-        self.fc1 = nn.Linear(1215, 750)  # Adjust if image size changes
-        self.classifier = nn.Linear(750, 10)  # Output 10 classes for Imagenette
+        self.conv2 = KAN_Convolutional_Layer(
+            in_channels=8,
+            out_channels=16,  
+            kernel_size=(3, 3),
+            grid_size=grid_size
+        )
+
+        self.conv3 = KAN_Convolutional_Layer(
+            in_channels=16,
+            out_channels=32,  
+            kernel_size=(3, 3),
+            grid_size=grid_size
+        )
+
+        self.pool = nn.MaxPool2d(kernel_size=(2, 2))
+        self.flat = nn.Flatten()
+        
+        # Compute correct input size after convolutions + pooling
+        self.fc_input_size = 32 * (160 // 8) * (160 // 8)  # Adjusted for 3 pooling layers
+        
+        self.linearlayer1 = nn.Linear(self.fc_input_size, 512)
+        self.relu = nn.ReLU()
+        self.linearlayer2 = nn.Linear(512, 10)  # Imagenette has 10 classes
 
     def forward(self, x):
         x = self.pool(self.conv1(x))
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = self.flatten(x)
-
-        x = self.fc1(x)
-        x = self.classifier(x)
-
+        x = self.pool(self.conv2(x))
+        x = self.pool(self.conv3(x))
+        x = self.flat(x)
+        x = self.relu(self.linearlayer1(x))
+        x = self.linearlayer2(x)
         return x
+
 
 def train(model, train_loader, optimizer, criterion, device, epoch):
     model.train()
@@ -175,21 +196,22 @@ def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
     # Classification Report
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open(f"./{name}_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
+    with open(f"{folder}/{name}_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
         file.truncate(0)
         file.write(f'Test Accuracy: {accuracy:.2f}%, Test Loss: {test_loss}\n')
         file.write(classification_report(all_labels, all_preds))
 
     return accuracy, test_loss
 
-def load_mnist_data(batch_size=32):
+def load_Imagenette_data(batch_size=34):
     transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
+        transforms.Resize((160, 160)),  # Resize all images to 160x160
+        transforms.ToTensor(),  # Convert images to PyTorch tensors
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Standard normalization
     ])
     
-    train_data = torchvision.datasets.FashionMNIST(root='data', train=True, download=True, transform=transform)
-    other_data = torchvision.datasets.FashionMNIST(root='data', train=False, download=True, transform=transform)
+    train_data = torchvision.datasets.Imagenette(root='data', split="train", download=True, transform=transform)
+    other_data = torchvision.datasets.Imagenette(root='data', split="val", download=True, transform=transform)
     val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
@@ -205,22 +227,27 @@ def main():
     # Hyperparams
     batch_size = 32
     learning_rate = 0.001
-    num_epochs = 10
+    num_epochs = 2
+    hdc_dimensions = 10000
+    dropout_rate = 0.0
+    n_levels = 150 # you can kind of think of this as rounding sensitivity
     
-    train_loader, valloader, test_loader = load_mnist_data(batch_size)
-    model = CNN().to(device)
+    train_loader, valloader, test_loader = load_Imagenette_data(batch_size)
+    model = KANC().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
+    
+    best_val_acc = 0
+    
     # Lists to store metrics
     train_losses, val_losses = [], []
     train_accuracies, val_accuracies = [], []
-    best_val_acc = 0
     
     for epoch in range(num_epochs):
         train_loss, train_acc = train(model, train_loader, optimizer, criterion, device, epoch+1)
         val_loss, val_acc = valtest(model, valloader, criterion, device)
-
+        
+        # Store metrics
         train_losses.append(train_loss)
         val_losses.append(val_loss)
         train_accuracies.append(train_acc)
@@ -230,14 +257,14 @@ def main():
         print(f'Train Loss: {train_loss:.4f}, Train Accuracy: {train_acc:.2f}%')
         print(f'Val Loss: {val_loss:.4f}, Val Accuracy: {val_acc:.2f}%')
 
-        
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            torch.save(model.state_dict(), 'CNN_baseline_results/CNN_baseline.pth')
+            torch.save(model.state_dict(), 'KAN_baseline_results/KAN_baseline.pth')
             print(f'Model saved with val accuracy: {val_acc:.2f}%')
     
     print(f'Best val accuracy: {best_val_acc:.2f}%')
-       # Plot accuracy and loss
+
+    # Plot accuracy and loss
     epochs = range(1, num_epochs + 1)
     plt.figure(figsize=(10, 5))
     
@@ -260,17 +287,18 @@ def main():
     plt.title('Training and Validation Accuracy')
     
     # Save plot
-    plt.savefig('CNN_baseline_results/training_plot.png')
+    plt.savefig('KAN_baseline_results/training_plot.png')
     plt.show()
-    plt.close('all')
-    model.load_state_dict(torch.load("CNN_baseline_results/CNN_baseline.pth", map_location=device, weights_only=False))
+
+
+    model.load_state_dict(torch.load("KAN_baseline_results/KAN_baseline.pth", map_location=device, weights_only=False))
     model.eval()
 
-    test("CNN_baseline", "CNN_baseline_results", model, test_loader, device)
-    test_with_noise("CNN_baseline", "CNN_baseline_results", model, test_loader, device, noise_std=0.1)
-    test_with_noise("CNN_baseline", "CNN_baseline_results",  model, test_loader, device, noise_std=0.4)
-    test_with_noise("CNN_baseline", "CNN_baseline_results", model, test_loader, device, noise_std=0.7)
-    test_with_noise("CNN_baseline", "CNN_baseline_results", model, test_loader, device, noise_std=1.0)
+    test("KAN_baseline", "KAN_baseline_results", model, test_loader, device)
+    test_with_noise("KAN_baseline", "KAN_baseline_results", model, test_loader, device, noise_std=0.1)
+    test_with_noise("KAN_baseline", "KAN_baseline_results",  model, test_loader, device, noise_std=0.4)
+    test_with_noise("KAN_baseline", "KAN_baseline_results", model, test_loader, device, noise_std=0.7)
+    test_with_noise("KAN_baseline", "KAN_baseline_results", model, test_loader, device, noise_std=1.0)
 
 if __name__ == '__main__':
     main()

@@ -14,16 +14,29 @@ from sklearn.metrics import confusion_matrix, classification_report
 import seaborn as sns
 import csv
 import pandas as pd
+from kan_convolutional.KANConv import KAN_Convolutional_Layer
 
-# Same as the CNN class in soap-models/CNN_baseline.py, except the classifier layer is removed
-# This is a "template" class that can be used to create a CNN model with a custom classifier
+# Same as the KAN class in soap-models/KAN_baseline.py, except the classifier layer is removed
+# This is a "template" class that can be used to create a KAN model with a custom classifier
 # The custom classifier is the LeHDC classifier in this case
-class CNNFeatureExtractor(nn.Module):
+class KANFeatureExtractor(nn.Module):
     def __init__(self, grid_size=5):
-        super(CNNFeatureExtractor, self).__init__()
-        self.conv1 = nn.Conv2d(1, 5, kernel_size=3)  # Change input channels to 3 (RGB)
-        self.conv2 = nn.Conv2d(5, 10, kernel_size=3)
-        self.conv3 = nn.Conv2d(10, 15, kernel_size=3)
+        super(KANFeatureExtractor, self).__init__()
+        self.conv1 = KAN_Convolutional_Layer(in_channels=1,
+            out_channels= 5,
+            kernel_size= (3,3),
+            grid_size = grid_size
+        )
+        self.conv2 = KAN_Convolutional_Layer(in_channels=5,
+            out_channels= 10,
+            kernel_size= (3,3),
+            grid_size = grid_size
+        )
+        self.conv3 = KAN_Convolutional_Layer(in_channels=10,
+            out_channels= 15,
+            kernel_size= (3,3),
+            grid_size = grid_size
+        )
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
@@ -44,11 +57,11 @@ class CNNFeatureExtractor(nn.Module):
 
         return x
         
-# This class is a combination of the CNNFeatureExtractor and LeHDC classes
-class CNN_HDC(nn.Module):
+# This class is a combination of the KANFeatureExtractor and LeHDC classes
+class KAN_HDC(nn.Module):
     def __init__(self, n_dimensions=10000, n_classes=100, n_levels=50, grid_size=5):
-        super(CNN_HDC, self).__init__()
-        self.feature_network = CNNFeatureExtractor(grid_size=grid_size)
+        super(KAN_HDC, self).__init__()
+        self.feature_network = KANFeatureExtractor(grid_size=grid_size)
         
         # LeHDC classifier as a separate component
         self.lehdc = LeHDC(
@@ -248,23 +261,23 @@ def main():
      # Hyperparams
     batch_size = 32
 
-    model = CNN_HDC()
+    model = KAN_HDC()
     train_loader, valloader, test_loader = load_mnist_data(batch_size)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
-    model.feature_network.load_state_dict(torch.load("CNN_baseline_results/CNN_baseline.pth", map_location=device))
+    model.feature_network.load_state_dict(torch.load("KAN_baseline_results/KAN_baseline.pth", map_location=device))
 
     model.train_lehdc(train_loader, valloader)
 
     model.eval()
 
-    test("CNN_HDC", "CNN_HDC_results", model, test_loader, device)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=0.1)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=0.4)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=0.7)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=1.0)
+    test("KAN_HDC", "KAN_HDC_results", model, test_loader, device)
+    test_with_noise("KAN_HDC", "KAN_HDC_results", model, test_loader, device, noise_std=0.1)
+    test_with_noise("KAN_HDC", "KAN_HDC_results", model, test_loader, device, noise_std=0.4)
+    test_with_noise("KAN_HDC", "KAN_HDC_results", model, test_loader, device, noise_std=0.7)
+    test_with_noise("KAN_HDC", "KAN_HDC_results", model, test_loader, device, noise_std=1.0)
 
 if __name__ == '__main__':
     main()
