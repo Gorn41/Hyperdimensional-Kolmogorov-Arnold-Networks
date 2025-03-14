@@ -17,12 +17,12 @@ class KAN(nn.Module):
     def __init__(self, grid_size: int = 5):
         super(KAN, self).__init__()
         self.conv1 = KAN_Convolutional_Layer(in_channels=3,
-            out_channels= 4,
+            out_channels= 16,
             kernel_size= (3,3),
             grid_size = grid_size
         )
-        self.conv2 = KAN_Convolutional_Layer(in_channels=4,
-            out_channels= 8,
+        self.conv2 = KAN_Convolutional_Layer(in_channels=16,
+            out_channels= 32,
             kernel_size= (3,3),
             grid_size = grid_size
         )
