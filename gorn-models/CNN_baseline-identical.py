@@ -16,23 +16,17 @@ import pandas as pd
 class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
-        self.conv1 = nn.Conv2d(1, 5, kernel_size=3)  
-        self.conv2 = nn.Conv2d(5, 5, kernel_size=3)
-        self.conv3 = nn.Conv2d(5, 2, kernel_size=3)
+        self.conv1 = nn.Conv2d(1, 2, kernel_size=3)  
+        self.conv2 = nn.Conv2d(2, 2, kernel_size=3)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        # Adjusting input size for the fully connected layer based on Imagenette resolution (assume 160x160)
-        self.fc1 = nn.Linear(162, 96)  # Adjust if image size changes
-        self.classifier = nn.Linear(96, 10)  # Output 10 classes for Imagenette
+        self.classifier = nn.Linear(98, 10)  # Output 10 classes for Imagenette
 
     def forward(self, x):
         x = self.pool(self.conv1(x))
-        x = self.conv2(x)
-        x = self.conv3(x)
+        x = self.pool(self.conv2(x))
         x = self.flatten(x)
-
-        x = self.fc1(F.relu(x))
         x = self.classifier(x)
 
         return x

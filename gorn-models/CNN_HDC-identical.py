@@ -21,25 +21,20 @@ import pandas as pd
 class CNNFeatureExtractor(nn.Module):
     def __init__(self, grid_size=5):
         super(CNNFeatureExtractor, self).__init__()
-        self.conv1 = nn.Conv2d(1, 5, kernel_size=3)  # Change input channels to 3 (RGB)
-        self.conv2 = nn.Conv2d(5, 5, kernel_size=3)
-        self.conv3 = nn.Conv2d(5, 2, kernel_size=3)
+        self.conv1 = nn.Conv2d(1, 2, kernel_size=3)  # Change input channels to 3 (RGB)
+        self.conv2 = nn.Conv2d(2, 2, kernel_size=3)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.feature_size = 162
-        self.fc1 = nn.Linear(self.feature_size, 96)
-        self.classifier = nn.Linear(96, 10)  # Output 100 classes for CIFAR-100
+        self.classifier = nn.Linear(98, 10)  # Output 100 classes for CIFAR-100
     
         # Chopped off the classifier layer
 
 
     def forward(self, x):
-        x = self.pool(self.conv1(x)) # Apply ReLU activation
-        x = self.conv2(x)
-        x = self.conv3(x)
+        x = self.pool(self.conv1(x))
+        x = self.pool(self.conv2(x))
         x = self.flatten(x)
-        x = self.fc1(x)
         # Chopped off the classifier layer
 
         return x
@@ -255,17 +250,17 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
-    model.feature_network.load_state_dict(torch.load("CNN_baseline_results/CNN_baseline.pth", map_location=device))
+    model.feature_network.load_state_dict(torch.load("CNN_identical_baseline_results/CNN_identical_baseline.pth", map_location=device))
 
     model.train_lehdc(train_loader, valloader)
 
     model.eval()
 
-    test("CNN_HDC", "CNN_HDC_results", model, test_loader, device)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=0.1)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=0.4)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=0.7)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=1.0)
+    test("CNN_identical_HDC", "CNN_identical_HDC_results", model, test_loader, device)
+    test_with_noise("CNN_identical_HDC", "CNN_identical_HDC_results", model, test_loader, device, noise_std=0.1)
+    test_with_noise("CNN_identical_HDC", "CNN_identical_HDC_results", model, test_loader, device, noise_std=0.4)
+    test_with_noise("CNN_identical_HDC", "CNN_identical_HDC_results", model, test_loader, device, noise_std=0.7)
+    test_with_noise("CNN_identical_HDC", "CNN_identical_HDC_results", model, test_loader, device, noise_std=1.0)
 
 if __name__ == '__main__':
     main()
