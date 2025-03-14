@@ -34,7 +34,6 @@ class CNNFeatureExtractor(nn.Module):
         x = self.pool(F.relu(self.conv2(x)))
         x = torch.flatten(x, 1)  # Flatten
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
         return x
         
 # This class is a combination of the CNNFeatureExtractor and LeHDC classes
@@ -45,7 +44,7 @@ class CNN_HDC(nn.Module):
         
         # LeHDC classifier as a separate component
         self.lehdc = LeHDC(
-            n_features=84, 
+            n_features=120, 
             n_dimensions=n_dimensions,
             n_classes=n_classes,
             n_levels=n_levels,
@@ -128,7 +127,7 @@ def validate(model, val_loader, loss_func, device):
 
     return (100 * correct / total, total_loss / len(val_loader.dataset))
 
-def test(name, folder, model, testloader, device):
+def test(folder, name, model, testloader, device):
     model.eval()
     correct = 0
     total = 0
@@ -168,7 +167,7 @@ def test(name, folder, model, testloader, device):
         file.write(classification_report(all_labels, all_preds))
     return
 
-def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
+def test_with_noise(folder, name, model, testloader, device, noise_std=0.1):
     model.eval()
     correct = 0
     total = 0
