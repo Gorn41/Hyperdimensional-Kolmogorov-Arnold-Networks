@@ -68,9 +68,12 @@ class CNN_HDC(nn.Module):
 
         features = torch.cat(features, dim=0)
         labels = torch.cat(labels, dim=0)
+        
+        dataset = torch.utils.data.TensorDataset(features, labels)
+        train_loader = torch.utils.data.DataLoader(dataset, batch_size=64, shuffle=True)
 
-        # Fit OnlineHD to training data
-        self.hdc.fit((features, labels))
+        # Fit OnlineHD using the DataLoader
+        self.hdc.fit(train_loader)  
 
         # Validation phase
         val_features, val_labels = [], []
