@@ -206,7 +206,7 @@ def main():
     # Hyperparams
     batch_size = 32
     learning_rate = 0.001
-    num_epochs = 2
+    num_epochs = 5
     hdc_dimensions = 10000
     dropout_rate = 0.0
     n_levels = 150 # you can kind of think of this as rounding sensitivity
