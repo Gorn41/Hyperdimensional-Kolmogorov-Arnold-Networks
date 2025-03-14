@@ -14,7 +14,6 @@ from sklearn.metrics import confusion_matrix, classification_report
 import seaborn as sns
 import csv
 import pandas as pd
-from kan_convolutional.KANConv import KAN_Convolutional_Layer
 
 # Same as the CNN class in soap-models/CNN_baseline.py, except the classifier layer is removed
 # This is a "template" class that can be used to create a CNN model with a custom classifier
@@ -22,10 +21,13 @@ from kan_convolutional.KANConv import KAN_Convolutional_Layer
 class CNNFeatureExtractor(nn.Module):
     def __init__(self, grid_size=5):
         super(CNNFeatureExtractor, self).__init__()
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)  # Change input channels to 3 (RGB)
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.pool = nn.MaxPool2d(2, 2)
+        self.feature_extractor = nn.Sequential(
+            nn.Conv2d(3, 16, kernel_size=3, padding=1),
+            
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.MaxPool2d(kernel_size=(2, 2)),
+        )
         
         self.flatten = nn.Flatten()
         self.feature_size = 64 * 4 * 4
@@ -247,7 +249,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
-    model.feature_network.load_state_dict(torch.load("CNN_HDC_results/CNN_baseline.pth", map_location=device))
+    model.feature_network.load_state_dict(torch.load("CNN_baseline_results/CNN_baseline.pth", map_location=device))
 
     model.train_lehdc(trainloader, valloader)
 
