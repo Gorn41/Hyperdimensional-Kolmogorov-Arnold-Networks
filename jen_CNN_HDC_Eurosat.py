@@ -23,8 +23,8 @@ class CNNFeatureExtractor(nn.Module):
         super(CNNFeatureExtractor, self).__init__()
         self.conv1 = nn.Conv2d(3, 6, kernel_size=5, padding=2)  # 64x64 -> 64x64
         self.conv2 = nn.Conv2d(6, 16, kernel_size=5)  # 32x32 -> 28x28
-        self.fc1 = nn.Linear(16 * 14 * 14, 120)
-        self.fc2 = nn.Linear(120, 84)
+        self.fc1 = nn.Linear(16 * 14 * 14, 256)
+        self.fc2 = nn.Linear(256, 84)
         self.fc3 = nn.Linear(84, 10)  # 10 classes for EuroSAT
         self.pool = nn.MaxPool2d(2, 2)  # 64x64 -> 32x32
 
@@ -44,7 +44,7 @@ class CNN_HDC(nn.Module):
         
         # LeHDC classifier as a separate component
         self.lehdc = LeHDC(
-            n_features=120, 
+            n_features=256, 
             n_dimensions=n_dimensions,
             n_classes=n_classes,
             n_levels=n_levels,
