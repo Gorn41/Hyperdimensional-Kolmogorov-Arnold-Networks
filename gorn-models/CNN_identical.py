@@ -23,8 +23,8 @@ class CNN(nn.Module):
         self.flatten = nn.Flatten()
 
         # Adjusting input size for the fully connected layer based on Imagenette resolution (assume 160x160)
-        self.fc1 = nn.Linear(162, 256)  # Adjust if image size changes
-        self.classifier = nn.Linear(256, 10)  # Output 10 classes for Imagenette
+        self.fc1 = nn.Linear(162, 96)  # Adjust if image size changes
+        self.classifier = nn.Linear(96, 10)  # Output 10 classes for Imagenette
 
     def forward(self, x):
         x = self.pool(self.conv1(x))
