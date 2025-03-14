@@ -23,16 +23,10 @@ class KAN(nn.Module):
             padding=(1,1)
         )
         self.conv2 = KAN_Convolutional_Layer(in_channels=2,
-            out_channels= 2,
+            out_channels= 3,
             kernel_size= (3,3),
             grid_size = grid_size,
             padding=(1,1)
-        )
-
-        self.conv3 = KAN_Convolutional_Layer(in_channels=2,
-            out_channels= 2,
-            kernel_size= (3,3),
-            grid_size = grid_size,
         )
 
         self.pool = nn.MaxPool2d(2, 2)
@@ -40,7 +34,7 @@ class KAN(nn.Module):
 
         # Adjusting input size for the fully connected layer based on Imagenette resolution (assume 160x160)
         # self.fc1 = nn.Linear(1215, 750)  # Adjust if image size changes
-        self.classifier = nn.Linear(50, 10)  # Output 10 classes for Imagenette
+        self.classifier = nn.Linear(147, 10)  # Output 10 classes for Imagenette
 
     def forward(self, x):
         x = self.pool(self.conv1(x))
