@@ -225,6 +225,18 @@ def main():
         print(f'Epoch {epoch+1}/{num_epochs}:')
         print(f'Train Loss: {train_loss:.4f}, Train Accuracy: {train_acc:.2f}%')
         print(f'Val Loss: {val_loss:.4f}, Val Accuracy: {val_acc:.2f}%')
+
+        # plot training and validation loss, and training and validation accuracy
+        # save the plot as a .png file
+        plt.plot(epoch, train_loss, label='Training Loss')
+        plt.plot(epoch, val_loss, label='Validation Loss')
+        plt.plot(epoch, train_acc, label='Training Accuracy')
+        plt.plot(epoch, val_acc, label='Validation Accuracy')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss/Accuracy')
+        plt.legend()
+        plt.savefig('CNN_baseline_results/CNN_baseline_plot.png')
+        plt.show()
         
         if val_acc > best_val_acc:
             best_val_acc = val_acc
