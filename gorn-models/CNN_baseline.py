@@ -11,7 +11,6 @@ import numpy as np
 from sklearn.metrics import confusion_matrix, classification_report
 import seaborn as sns
 import pandas as pd
-from datasetnoiser import create_dataset2
 
 # CNN baseline model
 class CNN(nn.Module):
@@ -33,7 +32,7 @@ class CNN(nn.Module):
         x = self.conv3(x)
         x = self.flatten(x)
 
-        x = self.fc1(x)
+        x = self.fc1(F.relu(x))
         x = self.classifier(x)
 
         return x

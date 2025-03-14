@@ -17,31 +17,28 @@ class KAN(nn.Module):
     def __init__(self, grid_size: int = 5):
         super(KAN, self).__init__()
         self.conv1 = KAN_Convolutional_Layer(in_channels=1,
-            out_channels= 5,
+            out_channels= 2,
             kernel_size= (3,3),
-            grid_size = grid_size
+            grid_size = grid_size,
+            padding=1
         )
-        self.conv2 = KAN_Convolutional_Layer(in_channels=5,
-            out_channels= 10,
+        self.conv2 = KAN_Convolutional_Layer(in_channels=2,
+            out_channels= 2,
             kernel_size= (3,3),
-            grid_size = grid_size
+            grid_size = grid_size,
+            padding=1
         )
-        self.conv3 = KAN_Convolutional_Layer(in_channels=10,
-            out_channels= 15,
-            kernel_size= (3,3),
-            grid_size = grid_size
-        )
+
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
         # Adjusting input size for the fully connected layer based on Imagenette resolution (assume 160x160)
-        self.fc1 = nn.Linear(1215, 750)  # Adjust if image size changes
-        self.classifier = nn.Linear(750, 10)  # Output 10 classes for Imagenette
+        # self.fc1 = nn.Linear(1215, 750)  # Adjust if image size changes
+        self.classifier = nn.Linear(72, 10)  # Output 10 classes for Imagenette
 
     def forward(self, x):
         x = self.pool(self.conv1(x))
-        x = self.conv2(x)
-        x = self.conv3(x)
+        x = self.pool(self.conv2(x))
         x = self.flatten(x)
 
         x = self.fc1(x)
