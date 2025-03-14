@@ -66,7 +66,7 @@ class KAN_HDC(nn.Module):
             max_level=1,
             epochs=90,
             dropout_rate=0.2,
-            lr=0.001,
+            lr=0.0001,
             device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
         )
         
