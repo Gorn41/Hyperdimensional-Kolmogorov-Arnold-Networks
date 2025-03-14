@@ -27,9 +27,20 @@ class KAN(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        # Adjusted input size to match the output from conv2: 8 * 14 * 14 = 1568
-        self.fc1 = nn.Linear(8 * 14 * 14, 512)
+        # We will calculate the correct input size here
+        # We'll use a dummy input to get the dimensions
+        dummy_input = torch.zeros(1, 3, 64, 64)  # (Batch size, Channels, Height, Width)
+        with torch.no_grad():
+            output_size = self._get_conv_output(dummy_input)
+        
+        self.fc1 = nn.Linear(output_size, 512)
         self.classifier = nn.Linear(512, 10)  # Output 10 classes for Eurosat
+
+    def _get_conv_output(self, shape):
+        # Pass a dummy tensor through the model to get the output shape
+        x = self.pool(self.conv1(shape))  # After first conv + pool
+        x = self.conv2(x)  # After second conv
+        return int(np.prod(x.size()))  # Flatten all dimensions except the batch
 
     def forward(self, x):
         x = self.pool(self.conv1(x))  # Apply conv1 and pool
@@ -40,6 +51,7 @@ class KAN(nn.Module):
         x = self.classifier(x)  # Final classifier layer
 
         return x
+
 
 
 def train(model, train_loader, optimizer, criterion, device, epoch):
