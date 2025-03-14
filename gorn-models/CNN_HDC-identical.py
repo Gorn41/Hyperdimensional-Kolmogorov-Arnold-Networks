@@ -21,8 +21,8 @@ import pandas as pd
 class CNNFeatureExtractor(nn.Module):
     def __init__(self, grid_size=5):
         super(CNNFeatureExtractor, self).__init__()
-        self.conv1 = nn.Conv2d(1, 2, kernel_size=3, bias=False)  # Change input channels to 3 (RGB)
-        self.conv2 = nn.Conv2d(2, 2, kernel_size=3, bias=False)
+        self.conv1 = nn.Conv2d(1, 2, kernel_size=3, bias=False, padding=1)  # Change input channels to 3 (RGB)
+        self.conv2 = nn.Conv2d(2, 2, kernel_size=3, bias=False, padding=1)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
