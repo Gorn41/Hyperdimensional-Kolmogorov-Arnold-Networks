@@ -18,9 +18,9 @@ class CNN(nn.Module):
         super(CNN, self).__init__()
         self.conv1 = nn.Conv2d(3, 6, kernel_size=5, padding=2)  # 64x64 -> 64x64
         self.conv2 = nn.Conv2d(6, 16, kernel_size=5)  # 32x32 -> 28x28
-        self.fc1 = nn.Linear(16 * 14 * 14, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)  # 10 classes for EuroSAT
+        self.fc1 = nn.Linear(16 * 14 * 14, 256)
+        # self.fc2 = nn.Linear(120, 84)
+        self.fc2 = nn.Linear(256, 10)  # 10 classes for EuroSAT
         self.pool = nn.MaxPool2d(2, 2)  # 64x64 -> 32x32
     
     def forward(self, x):
@@ -28,8 +28,7 @@ class CNN(nn.Module):
         x = self.pool(F.relu(self.conv2(x)))
         x = torch.flatten(x, 1)  # Flatten
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = self.fc2(x)
         return x
 
 
