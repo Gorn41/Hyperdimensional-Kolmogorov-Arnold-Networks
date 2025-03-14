@@ -181,7 +181,7 @@ def test_with_noise(folder, name, model, testloader, device, noise_std=0.1):
     # Classification Report
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open(f"./{name}_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
+    with open(f"{folder}/{name}_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
         file.truncate(0)
         file.write(f'Test Accuracy: {accuracy:.2f}%, Test Loss: {test_loss}\n')
         file.write(classification_report(all_labels, all_preds))
@@ -239,7 +239,7 @@ def main():
         
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            torch.save(model.state_dict(), './Eurosat_results/Eurosat_baselineCNN_IDENT_best.pth')
+            torch.save(model.state_dict(), './Eurosat_results/baselineCNN_IDENT_best.pth')
             print(f'Model saved with val accuracy: {val_acc:.2f}%')        
     
     print(f'Best val accuracy: {best_val_acc:.2f}%')
@@ -265,10 +265,10 @@ def main():
     plt.legend()
     plt.title('Training and Validation Accuracy')
 
-    plt.savefig("./Eurosat_results/Eurosat_baselineCNN_IDENT_training_plot.png")
+    plt.savefig("./Eurosat_results/baselineCNN_IDENT_training_plot.png")
     plt.show()
     
-    model.load_state_dict(torch.load("./Eurosat_results/Eurosat_baselineCNN_IDENT_best.pth", map_location=device))
+    model.load_state_dict(torch.load("./Eurosat_results/baselineCNN_IDENT_best.pth", map_location=device))
     model.eval()
     
     test("Eurosat_results", "baselineCNN_IDENT", model, test_loader, device)
