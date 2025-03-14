@@ -14,6 +14,8 @@ from sklearn.metrics import confusion_matrix, classification_report
 import seaborn as sns
 import csv
 import pandas as pd
+from torchhd import embeddings, structures
+
 
 # Same as the CNN class in soap-models/CNN_baseline.py, except the classifier layer is removed
 # This is a "template" class that can be used to create a CNN model with a custom classifier
@@ -37,29 +39,23 @@ class CNNFeatureExtractor(nn.Module):
         
 # This class is a combination of the CNNFeatureExtractor and LeHDC classes
 class CNN_HDC(nn.Module):
-    def __init__(self, n_dimensions=20000, n_classes=10, n_levels=50, grid_size=5):
+    def __init__(self, n_dimensions=20000, n_classes=10, sparsity=0.05, grid_size=5):
         super(CNN_HDC, self).__init__()
         self.feature_network = CNNFeatureExtractor(grid_size=grid_size)
         
-        # Update LeHDC classifier input size to match new fc1 output size (512)
-        self.hdc = OnlineHD(
-            n_features=512,  # Matches CNN feature extractor
-            n_classes=n_classes,
-            n_dimensions=n_dimensions,
-        ).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
-
-        
+        # SparseHD requires a sparse representation of features
+        self.sparse_encoder = embeddings.Sparse(n_features=512, n_dimensions=n_dimensions, sparsity=sparsity)
+        self.hdc = structures.SparseHD(n_classes, n_dimensions).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
         self.hdc_trained = False
 
-    # Forward pass through the feature extractor and the LeHDC classifier
     def forward(self, x):
         features = self.feature_network.forward(x)
-        return self.hdc(features)
+        hd_rep = self.sparse_encoder(features)  # Convert to SparseHD representation
+        return self.hdc(hd_rep)
 
     def train_hdc(self, train_loader, val_loader):
         features, labels = [], []
 
-        # Extract features from the CNN for training data
         with torch.no_grad():
             for images, targets in train_loader:
                 images, targets = images.to(next(self.parameters()).device), targets.to(next(self.parameters()).device)
@@ -68,30 +64,30 @@ class CNN_HDC(nn.Module):
 
         features = torch.cat(features, dim=0)
         labels = torch.cat(labels, dim=0)
-        
-        dataset = torch.utils.data.TensorDataset(features, labels)
-        train_loader = torch.utils.data.DataLoader(dataset, batch_size=64, shuffle=True)
 
-        # Fit OnlineHD using the DataLoader
-        self.hdc.fit(train_loader)  
+        # Convert features to sparse HD representations
+        hd_features = self.sparse_encoder(features)
 
-        # Validation phase
-        val_features, val_labels = [], []
+        # Train SparseHD classifier
+        self.hdc.fit(hd_features, labels)
 
+        # Validate
         with torch.no_grad():
+            val_features, val_labels = [], []
             for images, targets in val_loader:
                 images, targets = images.to(next(self.parameters()).device), targets.to(next(self.parameters()).device)
                 val_features.append(self.feature_network(images))
                 val_labels.append(targets)
 
-        val_features = torch.cat(val_features, dim=0)
-        val_labels = torch.cat(val_labels, dim=0)
+            val_features = torch.cat(val_features, dim=0)
+            val_labels = torch.cat(val_labels, dim=0)
+            hd_val_features = self.sparse_encoder(val_features)
 
-        val_preds = self.hdc(val_features)
-        val_accuracy = (val_preds.argmax(dim=1) == val_labels).float().mean().item()
+            val_preds = self.hdc(hd_val_features)
+            val_accuracy = (val_preds.argmax(dim=1) == val_labels).float().mean().item()
 
-        print(f"Validation Accuracy: {val_accuracy * 100:.2f}%")
-        self.hdc_trained = True
+            print(f"Validation Accuracy: {val_accuracy * 100:.2f}%")
+            self.hdc_trained = True
 
 
 def validate(model, val_loader, loss_func, device):
