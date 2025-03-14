@@ -3,7 +3,7 @@ import torch.nn as nn
 import torchhd
 from classifiers import LeHDC
 from torch.utils.data import DataLoader, Subset
-from torchvision.datasets import MNIST
+from torchvision import datasets, transforms
 import torchvision
 import tqdm
 import torch.nn.functional as F
@@ -229,36 +229,48 @@ def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def main():
-    num_epochs = 5
-    batch_sz = 32
-
-    model = CNN_HDC()
-
-    transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(), torchvision.transforms.Normalize((0.1307,), (0.3081,))])
-
-    train_data = torchvision.datasets.FashionMNIST(root='data', train=True, download=True, transform=transform)
-    other_data = torchvision.datasets.FashionMNIST(root='data', train=False, download=True, transform=transform)
+def load_CIFAR100_data(batch_size=34):
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+    
+    train_data = torchvision.datasets.CIFAR100(root='data', train=True, download=True, transform=transform)
+    other_data = torchvision.datasets.CIFAR100(root='data', train=False, download=True, transform=transform)
     val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
 
-    trainloader = torch.utils.data.DataLoader(train_data, batch_size=batch_sz, shuffle=True)
-    valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_sz, shuffle=True)
-    testloader = torch.utils.data.DataLoader(test_data, batch_size=batch_sz)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
+    valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_size, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size)
+    
+    return train_loader, valloader, test_loader
+
+def main():
+     # Hyperparams
+    batch_size = 32
+    learning_rate = 0.001
+    num_epochs = 10
+    hdc_dimensions = 10000
+    dropout_rate = 0.0
+    n_levels = 150 # you can kind of think of this as rounding sensitivity
+
+    model = CNN_HDC()
+    train_loader, valloader, test_loader = load_CIFAR100_data(batch_size)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
     model.feature_network.load_state_dict(torch.load("CNN_baseline_results/CNN_baseline.pth", map_location=device))
 
-    model.train_lehdc(trainloader, valloader)
+    model.train_lehdc(train_loader, valloader)
 
     model.eval()
 
-    test("CNN_HDC", "CNN_HDC_results", model, testloader, device)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, testloader, device, noise_std=0.1)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, testloader, device, noise_std=0.4)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, testloader, device, noise_std=0.7)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, testloader, device, noise_std=1.0)
+    test("CNN_HDC", "CNN_HDC_results", model, test_loader, device)
+    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=0.1)
+    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=0.4)
+    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=0.7)
+    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=1.0)
 
 if __name__ == '__main__':
     main()
