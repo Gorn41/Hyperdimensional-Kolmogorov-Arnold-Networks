@@ -43,9 +43,9 @@ class CNN_HDC(nn.Module):
         
         # Update LeHDC classifier input size to match new fc1 output size (512)
         self.hdc = OnlineHD(
-            input_dim=512,  # Matches CNN feature extractor
-            output_dim=n_classes,
-            hd_dim=n_dimensions,
+            n_features=512,  # Matches CNN feature extractor
+            n_classes=n_classes,
+            n_dimensions=n_dimensions,
         ).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
 
         
