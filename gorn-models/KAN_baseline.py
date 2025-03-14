@@ -34,7 +34,7 @@ class KAN(nn.Module):
 
         # Adjusting input size for the fully connected layer based on Imagenette resolution (assume 160x160)
         # self.fc1 = nn.Linear(1215, 750)  # Adjust if image size changes
-        self.classifier = nn.Linear(72, 10)  # Output 10 classes for Imagenette
+        self.classifier = nn.Linear(98, 10)  # Output 10 classes for Imagenette
 
     def forward(self, x):
         x = self.pool(self.conv1(x))
