@@ -11,14 +11,26 @@ import numpy as np
 from sklearn.metrics import confusion_matrix, classification_report
 import seaborn as sns
 import pandas as pd
+from kan_convolutional.KANConv import KAN_Convolutional_Layer
 
-# CNN baseline model
-class CNN(nn.Module):
-    def __init__(self):
-        super(CNN, self).__init__()
-        self.conv1 = nn.Conv2d(1, 5, kernel_size=3)  
-        self.conv2 = nn.Conv2d(5, 10, kernel_size=3)
-        self.conv3 = nn.Conv2d(10, 15, kernel_size=3)
+class KAN(nn.Module):
+    def __init__(self, grid_size: int = 5):
+        super(KAN, self).__init__()
+        self.conv1 = KAN_Convolutional_Layer(in_channels=1,
+            out_channels= 5,
+            kernel_size= (3,3),
+            grid_size = grid_size
+        )
+        self.conv2 = KAN_Convolutional_Layer(in_channels=5,
+            out_channels= 10,
+            kernel_size= (3,3),
+            grid_size = grid_size
+        )
+        self.conv3 = KAN_Convolutional_Layer(in_channels=10,
+            out_channels= 15,
+            kernel_size= (3,3),
+            grid_size = grid_size
+        )
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
@@ -208,7 +220,7 @@ def main():
     num_epochs = 10
     
     train_loader, valloader, test_loader = load_mnist_data(batch_size)
-    model = CNN().to(device)
+    model = KAN().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
@@ -233,7 +245,7 @@ def main():
         
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            torch.save(model.state_dict(), 'CNN_baseline_results/CNN_baseline.pth')
+            torch.save(model.state_dict(), 'KAN_baseline_results/KAN_baseline.pth')
             print(f'Model saved with val accuracy: {val_acc:.2f}%')
     
     print(f'Best val accuracy: {best_val_acc:.2f}%')
@@ -260,17 +272,17 @@ def main():
     plt.title('Training and Validation Accuracy')
     
     # Save plot
-    plt.savefig('CNN_baseline_results/training_plot.png')
+    plt.savefig('KAN_baseline_results/training_plot.png')
     plt.show()
     plt.close('all')
-    model.load_state_dict(torch.load("CNN_baseline_results/CNN_baseline.pth", map_location=device, weights_only=False))
+    model.load_state_dict(torch.load("KAN_baseline_results/KAN_baseline.pth", map_location=device, weights_only=False))
     model.eval()
 
-    test("CNN_baseline", "CNN_baseline_results", model, test_loader, device)
-    test_with_noise("CNN_baseline", "CNN_baseline_results", model, test_loader, device, noise_std=0.1)
-    test_with_noise("CNN_baseline", "CNN_baseline_results",  model, test_loader, device, noise_std=0.4)
-    test_with_noise("CNN_baseline", "CNN_baseline_results", model, test_loader, device, noise_std=0.7)
-    test_with_noise("CNN_baseline", "CNN_baseline_results", model, test_loader, device, noise_std=1.0)
+    test("KAN_baseline", "KAN_baseline_results", model, test_loader, device)
+    test_with_noise("KAN_baseline", "KAN_baseline_results", model, test_loader, device, noise_std=0.1)
+    test_with_noise("KAN_baseline", "KAN_baseline_results",  model, test_loader, device, noise_std=0.4)
+    test_with_noise("KAN_baseline", "KAN_baseline_results", model, test_loader, device, noise_std=0.7)
+    test_with_noise("KAN_baseline", "KAN_baseline_results", model, test_loader, device, noise_std=1.0)
 
 if __name__ == '__main__':
     main()
