@@ -17,12 +17,12 @@ class KAN(nn.Module):
     def __init__(self, grid_size: int = 5):
         super(KAN, self).__init__()
         self.conv1 = KAN_Convolutional_Layer(in_channels=3,
-            out_channels= 16,
+            out_channels= 4,
             kernel_size= (3,3),
             grid_size = grid_size
         )
-        self.conv2 = KAN_Convolutional_Layer(in_channels=16,
-            out_channels= 32,
+        self.conv2 = KAN_Convolutional_Layer(in_channels=4,
+            out_channels= 8,
             kernel_size= (3,3),
             grid_size = grid_size
         )
@@ -189,14 +189,15 @@ def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def load_Face_data(batch_size):
+def load_Imagenette_data(batch_size):
     transform = transforms.Compose([
+        transforms.Resize((32, 32)),  # Resize all images to 32x32
         transforms.ToTensor(),  # Convert images to PyTorch tensors
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Standard normalization
     ])
     
-    train_data = torchvision.datasets.FER2013(root='data', split="train", transform=transform)
-    other_data = torchvision.datasets.FER2013(root='data', split="test", transform=transform)
+    train_data = torchvision.datasets.Imagenette(root='data', split="train", download=True, transform=transform)
+    other_data = torchvision.datasets.Imagenette(root='data', split="val", download=True, transform=transform)
     val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
@@ -214,7 +215,7 @@ def main():
     learning_rate = 0.001
     num_epochs = 5
     
-    train_loader, valloader, test_loader = load_Face_data(batch_size)
+    train_loader, valloader, test_loader = load_Imagenette_data(batch_size)
     model = KAN().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
