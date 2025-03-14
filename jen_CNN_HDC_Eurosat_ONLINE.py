@@ -70,7 +70,7 @@ class CNN_HDC(nn.Module):
         labels = torch.cat(labels, dim=0)
 
         # Fit OnlineHD to training data
-        self.hdc.fit(features, labels)
+        self.hdc.fit((features, labels))
 
         # Validation phase
         val_features, val_labels = [], []
