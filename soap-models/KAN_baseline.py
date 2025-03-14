@@ -219,7 +219,7 @@ def main():
     learning_rate = 0.001
     num_epochs = 10
     
-    train_loader, valloader, test_loader = load_mnist_data(batch_size)
+    train_loader, valloader, test_loader = load_Imagenette_data(batch_size)
     model = KAN().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)

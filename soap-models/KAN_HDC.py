@@ -263,7 +263,7 @@ def main():
     batch_size = 32
 
     model = KAN_HDC()
-    train_loader, valloader, test_loader = load_mnist_data(batch_size)
+    train_loader, valloader, test_loader = load_Imagenette_data(batch_size)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
