@@ -29,7 +29,7 @@ class KAN(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.fc1 = nn.Linear(43808, 512)
+        self.fc1 = nn.Linear(35574, 512)
         self.dropout = nn.Dropout(0.5)
         self.classifier = nn.Linear(512, 10)  # Output 10 classes for Imagenette
 
