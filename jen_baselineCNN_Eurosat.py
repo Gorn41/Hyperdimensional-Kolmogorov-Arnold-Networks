@@ -200,8 +200,7 @@ def main():
     # Hyperparams
     batch_size = 32
     learning_rate = 0.001
-    num_epochs = 10
-    dropout_rate = 0.0
+    num_epochs = 20
     
     train_loader, val_loader, test_loader = load_eurosat_data(batch_size)
     model = CNN().to(device)
@@ -215,7 +214,7 @@ def main():
 
     for epoch in range(num_epochs):
         train_loss, train_acc = train(model, train_loader, optimizer, criterion, device, epoch+1)
-        val_loss, val_acc = valtest(model, valloader, criterion, device)
+        val_loss, val_acc = valtest(model, val_loader, criterion, device)
         
         train_losses.append(train_loss)
         val_losses.append(val_loss)
