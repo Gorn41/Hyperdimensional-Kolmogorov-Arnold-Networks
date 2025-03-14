@@ -20,13 +20,13 @@ class KAN(nn.Module):
             out_channels= 2,
             kernel_size= (3,3),
             grid_size = grid_size,
-            padding=1
+            padding=(1,1)
         )
         self.conv2 = KAN_Convolutional_Layer(in_channels=2,
             out_channels= 2,
             kernel_size= (3,3),
             grid_size = grid_size,
-            padding=1
+            padding=(1,1)
         )
 
         self.pool = nn.MaxPool2d(2, 2)
