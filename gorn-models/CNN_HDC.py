@@ -21,32 +21,32 @@ import pandas as pd
 class CNNFeatureExtractor(nn.Module):
     def __init__(self, grid_size=5):
         super(CNNFeatureExtractor, self).__init__()
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)  # Change input channels to 3 (RGB)
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(1, 5, kernel_size=3)  # Change input channels to 3 (RGB)
+        self.conv2 = nn.Conv2d(5, 10, kernel_size=3)
+        self.conv3 = nn.Conv2d(10, 15, kernel_size=3)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.feature_size = 64 * 4 * 4
-        self.fc1 = nn.Linear(self.feature_size, 512)
-        self.classifier = nn.Linear(512, 100)  # Output 100 classes for CIFAR-100
+        self.feature_size = 1215
+        self.fc1 = nn.Linear(self.feature_size, 750)
+        self.classifier = nn.Linear(750, 10)  # Output 100 classes for CIFAR-100
     
         # Chopped off the classifier layer
 
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))  # Apply ReLU activation
-        x = self.pool(F.relu(self.conv2(x)))
-        x = self.pool(F.relu(self.conv3(x)))
+        x = self.pool(self.conv1(x)) # Apply ReLU activation
+        x = self.conv2(x)
+        x = self.conv3(x)
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
+        x = self.fc1(x)
         # Chopped off the classifier layer
 
         return x
         
 # This class is a combination of the CNNFeatureExtractor and LeHDC classes
 class CNN_HDC(nn.Module):
-    def __init__(self, n_dimensions=10000, n_classes=100, n_levels=100, grid_size=5):
+    def __init__(self, n_dimensions=10000, n_classes=100, n_levels=50, grid_size=5):
         super(CNN_HDC, self).__init__()
         self.feature_network = CNNFeatureExtractor(grid_size=grid_size)
         
@@ -228,7 +228,7 @@ def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def load_mnist_data(batch_size=34):
+def load_mnist_data(batch_size=32):
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
