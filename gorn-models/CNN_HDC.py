@@ -69,7 +69,6 @@ class CNN_HDC(nn.Module):
     # Forward pass through the feature extractor and the LeHDC classifier
     def forward(self, x):
         features = self.feature_network.forward(x)
-        features = self.dropout(features)
         return self.lehdc(features)
 
     def train_lehdc(self, train_loader, val_loader):
