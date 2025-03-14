@@ -196,7 +196,7 @@ def load_Face_data(batch_size):
     ])
     
     train_data = torchvision.datasets.FER2013(root='data', split="train", transform=transform)
-    other_data = torchvision.datasets.FER2013(root='data', split="val", transform=transform)
+    other_data = torchvision.datasets.FER2013(root='data', split="test", transform=transform)
     val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
