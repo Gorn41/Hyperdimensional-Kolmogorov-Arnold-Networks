@@ -17,30 +17,30 @@ class KAN(nn.Module):
     def __init__(self, grid_size: int = 5):
         super(KAN, self).__init__()
         self.conv1 = KAN_Convolutional_Layer(in_channels=3,
-            out_channels= 4,
-            kernel_size= (5,5),
-            grid_size = grid_size
-        )
+                                             out_channels=4,
+                                             kernel_size=(3, 3),
+                                             grid_size=grid_size)
         self.conv2 = KAN_Convolutional_Layer(in_channels=4,
-            out_channels= 8,
-            kernel_size= (5,5),
-            grid_size = grid_size
-        )
+                                             out_channels=8,
+                                             kernel_size=(3, 3),
+                                             grid_size=grid_size)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.fc1 = nn.Linear(43808, 512)
-        self.classifier = nn.Linear(512, 10)  # Output 10 classes for Imagenette
+        # Adjusted input size to match the output from conv2: 8 * 14 * 14 = 1568
+        self.fc1 = nn.Linear(8 * 14 * 14, 512)
+        self.classifier = nn.Linear(512, 10)  # Output 10 classes for Eurosat
 
     def forward(self, x):
-        x = self.pool(self.conv1(x))
-        x = self.conv2(x)
-        x = self.flatten(x)
+        x = self.pool(self.conv1(x))  # Apply conv1 and pool
+        x = self.conv2(x)  # Apply conv2
+        x = self.flatten(x)  # Flatten the tensor for the fully connected layer
 
-        x = self.fc1(x)
-        x = self.classifier(x)
+        x = self.fc1(x)  # Fully connected layer
+        x = self.classifier(x)  # Final classifier layer
 
         return x
+
 
 def train(model, train_loader, optimizer, criterion, device, epoch):
     model.train()
