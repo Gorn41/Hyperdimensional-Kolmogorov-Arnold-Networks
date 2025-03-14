@@ -38,19 +38,23 @@ class CNNFeatureExtractor(nn.Module):
 
         
 # This class is a combination of the CNNFeatureExtractor and LeHDC classes
+from torchhd import embeddings, structures
+
 class CNN_HDC(nn.Module):
-    def __init__(self, n_dimensions=20000, n_classes=10, sparsity=0.05, grid_size=5):
+    def __init__(self, n_dimensions=20000, n_classes=10, sparsity=0.05, grid_size=5, num_embeddings=512, embedding_dim=20000):
         super(CNN_HDC, self).__init__()
         self.feature_network = CNNFeatureExtractor(grid_size=grid_size)
+
+        # Update the Sparse encoder with the additional parameters
+        self.sparse_encoder = embeddings.Random(num_embeddings=num_embeddings, embedding_dim=embedding_dim, sparsity=sparsity)
         
-        # SparseHD creates a sparse representation of features
-        self.sparse_encoder = embeddings.Random(n_features=512, n_dimensions=n_dimensions, sparsity=sparsity)
-        self.hdc = structures.SparseHD(n_classes, n_dimensions).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+        # Use SparseHD for classification
+        self.hdc = structures.SparseHD(n_classes, embedding_dim).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
         self.hdc_trained = False
 
     def forward(self, x):
         features = self.feature_network.forward(x)
-        hd_rep = self.sparse_encoder(features)  # Convert to SparseHD representation
+        hd_rep = self.sparse_encoder(features)  # Convert features to SparseHD representation
         return self.hdc(hd_rep)
 
     def train_hdc(self, train_loader, val_loader):
@@ -71,7 +75,7 @@ class CNN_HDC(nn.Module):
         # Train SparseHD classifier
         self.hdc.fit(hd_features, labels)
 
-        # Validation
+        # Validation phase
         with torch.no_grad():
             val_features, val_labels = [], []
             for images, targets in val_loader:
@@ -88,6 +92,7 @@ class CNN_HDC(nn.Module):
 
             print(f"Validation Accuracy: {val_accuracy * 100:.2f}%")
             self.hdc_trained = True
+
 
 
 
