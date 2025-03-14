@@ -200,7 +200,7 @@ def main():
     # Hyperparams
     batch_size = 32
     learning_rate = 0.001
-    num_epochs = 20
+    num_epochs = 12
     
     train_loader, val_loader, test_loader = load_eurosat_data(batch_size)
     model = CNN().to(device)
