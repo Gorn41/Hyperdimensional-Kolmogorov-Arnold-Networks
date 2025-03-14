@@ -43,8 +43,8 @@ class CNN_HDC(nn.Module):
         super(CNN_HDC, self).__init__()
         self.feature_network = CNNFeatureExtractor(grid_size=grid_size)
         
-        # SparseHD requires a sparse representation of features
-        self.sparse_encoder = embeddings.Sparse(n_features=512, n_dimensions=n_dimensions, sparsity=sparsity)
+        # SparseHD creates a sparse representation of features
+        self.sparse_encoder = embeddings.Random(n_features=512, n_dimensions=n_dimensions, sparsity=sparsity)
         self.hdc = structures.SparseHD(n_classes, n_dimensions).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
         self.hdc_trained = False
 
@@ -71,7 +71,7 @@ class CNN_HDC(nn.Module):
         # Train SparseHD classifier
         self.hdc.fit(hd_features, labels)
 
-        # Validate
+        # Validation
         with torch.no_grad():
             val_features, val_labels = [], []
             for images, targets in val_loader:
@@ -88,6 +88,7 @@ class CNN_HDC(nn.Module):
 
             print(f"Validation Accuracy: {val_accuracy * 100:.2f}%")
             self.hdc_trained = True
+
 
 
 def validate(model, val_loader, loss_func, device):
