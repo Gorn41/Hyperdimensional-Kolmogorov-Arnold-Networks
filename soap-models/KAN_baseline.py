@@ -17,30 +17,24 @@ class KAN(nn.Module):
     def __init__(self, grid_size: int = 5):
         super(KAN, self).__init__()
         self.conv1 = KAN_Convolutional_Layer(in_channels=3,
-            out_channels= 16,
-            kernel_size= (3,3),
+            out_channels= 4,
+            kernel_size= (5,5),
             grid_size = grid_size
         )
-        self.conv2 = KAN_Convolutional_Layer(in_channels=16,
-            out_channels= 32,
-            kernel_size= (3,3),
-            grid_size = grid_size
-        )
-        self.conv3 = KAN_Convolutional_Layer(in_channels=32,
-            out_channels= 64,
-            kernel_size= (3,3),
+        self.conv2 = KAN_Convolutional_Layer(in_channels=4,
+            out_channels= 8,
+            kernel_size= (5,5),
             grid_size = grid_size
         )
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.fc1 = nn.Linear(64 * 20 * 20, 512)  # Adjust if image size changes
+        self.fc1 = nn.Linear(43808, 512)
         self.classifier = nn.Linear(512, 10)  # Output 10 classes for Imagenette
 
     def forward(self, x):
         x = self.pool(self.conv1(x))
         x = self.conv2(x)
-        x = self.conv3(x)
         x = self.flatten(x)
 
         x = self.fc1(x)
@@ -215,7 +209,7 @@ def main():
     print(f"Using device: {device}")
     
     # Hyperparams
-    batch_size = 16
+    batch_size = 4
     learning_rate = 0.001
     num_epochs = 10
     
