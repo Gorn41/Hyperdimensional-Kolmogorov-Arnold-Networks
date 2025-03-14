@@ -17,19 +17,19 @@ class KAN(nn.Module):
     def __init__(self, grid_size: int = 5):
         super(KAN, self).__init__()
         self.conv1 = KAN_Convolutional_Layer(in_channels=3,
-            out_channels= 6,
+            out_channels= 4,
             kernel_size= (5,5),
             grid_size = grid_size
         )
-        self.conv2 = KAN_Convolutional_Layer(in_channels=6,
-            out_channels= 12,
+        self.conv2 = KAN_Convolutional_Layer(in_channels=4,
+            out_channels= 8,
             kernel_size= (5,5),
             grid_size = grid_size
         )
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.fc1 = nn.Linear(12 * 37 * 37, 512)
+        self.fc1 = nn.Linear(8 * 80 * 80, 512)
         self.classifier = nn.Linear(512, 10)  # Output 10 classes for Imagenette
 
     def forward(self, x):
