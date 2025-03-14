@@ -49,7 +49,7 @@ class CNN_HDC(nn.Module):
         ).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
 
         
-        self.hdc = False
+        self.hdc_trained = False
 
     # Forward pass through the feature extractor and the LeHDC classifier
     def forward(self, x):
