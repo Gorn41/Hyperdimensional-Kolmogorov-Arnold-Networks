@@ -21,15 +21,12 @@ import pandas as pd
 class CNNFeatureExtractor(nn.Module):
     def __init__(self, grid_size=5):
         super(CNNFeatureExtractor, self).__init__()
-        self.feature_extractor = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=3, padding=1),
-            
-            nn.Conv2d(16, 32, kernel_size=3, padding=1),
-            nn.Conv2d(32, 64, kernel_size=3, padding=1),
-            nn.MaxPool2d(kernel_size=(2, 2)),
-        )
-        
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)  # Change input channels to 3 (RGB)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
+        
         self.feature_size = 64 * 4 * 4
         self.fc = nn.Linear(self.feature_size, 512)
         # Chopped off the classifier layer
