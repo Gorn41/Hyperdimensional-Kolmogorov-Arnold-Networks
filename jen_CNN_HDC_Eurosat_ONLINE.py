@@ -51,7 +51,7 @@ class CNN_HDC(nn.Module):
         self.sparsity = sparsity
 
         # Use SparseHD for classification
-        self.hdc = SparseHD(n_classes, embedding_dim).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+        self.hdc = SparseHD(num_embeddings, embedding_dim, n_classes).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
         self.hdc_trained = False
 
     def forward(self, x):
