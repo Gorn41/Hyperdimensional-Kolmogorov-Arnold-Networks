@@ -248,7 +248,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
-    model.feature_network.load_state_dict(torch.load("./Eurosat_results/Eurosat_baselineCNN_best.pth", map_location=device))
+    model.feature_network.load_state_dict(torch.load("./Eurosat_results/CNN_baseline_results/Eurosat_baselineCNN_best.pth", map_location=device))
 
     model.train_lehdc(train_loader, valloader)
 
