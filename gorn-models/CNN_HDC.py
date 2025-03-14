@@ -58,9 +58,9 @@ class CNN_HDC(nn.Module):
             n_levels=n_levels,
             min_level=-1,
             max_level=1,
-            epochs=40,
-            dropout_rate=0.2,
-            lr=0.01,
+            epochs=70,
+            dropout_rate=0.3,
+            lr=0.0001,
             device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
         )
         
