@@ -138,7 +138,7 @@ def validate(model, val_loader, loss_func, device):
 
     return (100 * correct / total, total_loss / len(val_loader.dataset))
 
-def test(name, model, testloader, device):
+def test(name, folder, model, testloader, device):
     model.eval()
     correct = 0
     total = 0
@@ -168,17 +168,17 @@ def test(name, model, testloader, device):
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
     plt.title(f'{name} Confusion Matrix (No Noise)')
-    plt.savefig(f"./{name}_confusion_matrix_no_noise.png")
+    plt.savefig(f"{folder}/{name}_confusion_matrix_no_noise.png")
 
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open(f"./{name}_classification_report_no_noise.txt", 'a', newline='') as file:
+    with open(f"{folder}/{name}_classification_report_no_noise.txt", 'a', newline='') as file:
         file.truncate(0)
         file.write(f'Test Accuracy: {100 * correct / total:.2f}%, Test Loss: {test_loss}')
         file.write(classification_report(all_labels, all_preds))
     return
 
-def test_with_noise(name, model, testloader, device, noise_std=0.1):
+def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
     model.eval()
     correct = 0
     total = 0
@@ -218,13 +218,13 @@ def test_with_noise(name, model, testloader, device, noise_std=0.1):
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
     plt.title(f'{name} Confusion Matrix (Noise Std = {noise_std})')
-    plt.savefig(f"./{name}_confusion_matrix_noise_{noise_std}.png")
+    plt.savefig(f"{folder}/{name}_confusion_matrix_noise_{noise_std}.png")
     plt.show()
 
     # Classification Report
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open(f"./{name}_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
+    with open(f"{folder}/{name}_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
         file.truncate(0)
         file.write(f'Test Accuracy: {accuracy:.2f}%, Test Loss: {test_loss}\n')
         file.write(classification_report(all_labels, all_preds))
@@ -250,17 +250,17 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
-    model.feature_network.load_state_dict(torch.load("CNN_baseline_results/CNN_baseline.pth", map_location=device))
+    model.feature_network.load_state_dict(torch.load("CNN_HDC_results/CNN_baseline.pth", map_location=device))
 
     model.train_lehdc(trainloader, valloader)
 
     model.eval()
 
-    test("CNN_HDC", model, testloader, device)
-    test_with_noise("CNN_HDC", model, testloader, device, noise_std=0.1)
-    test_with_noise("CNN_HDC", model, testloader, device, noise_std=0.4)
-    test_with_noise("CNN_HDC", model, testloader, device, noise_std=0.7)
-    test_with_noise("CNN_HDC", model, testloader, device, noise_std=1.0)
+    test("CNN_HDC", "CNN_HDC_results", model, testloader, device)
+    test_with_noise("CNN_HDC", "CNN_HDC_results", model, testloader, device, noise_std=0.1)
+    test_with_noise("CNN_HDC", "CNN_HDC_results", model, testloader, device, noise_std=0.4)
+    test_with_noise("CNN_HDC", "CNN_HDC_results", model, testloader, device, noise_std=0.7)
+    test_with_noise("CNN_HDC", "CNN_HDC_results", model, testloader, device, noise_std=1.0)
 
 if __name__ == '__main__':
     main()

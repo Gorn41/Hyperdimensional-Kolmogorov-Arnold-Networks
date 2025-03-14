@@ -33,7 +33,6 @@ class CNN(nn.Module):
         x = self.flatten(x)
 
         x = F.relu(self.fc1(x))
-        x = self.dropout(x)
         x = self.classifier(x)
 
         return x
@@ -88,7 +87,7 @@ def valtest(model, test_loader, criterion, device):
     print(f'Test Loss: {test_loss:.4f}, Test Accuracy: {test_acc:.2f}%')
     return test_loss, test_acc
 
-def test(name, model, testloader, device):
+def test(name, folder, model, testloader, device):
     model.eval()
     correct = 0
     total = 0
@@ -120,17 +119,17 @@ def test(name, model, testloader, device):
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
     plt.title(f'{name} Confusion Matrix (No Noise)')
-    plt.savefig(f"./{name}_confusion_matrix_no_noise.png")
+    plt.savefig(f"{folder}/{name}_confusion_matrix_no_noise.png")
 
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open(f"./{name}_classification_report_no_noise.txt", 'a', newline='') as file:
+    with open(f"{folder}/{name}_classification_report_no_noise.txt", 'a', newline='') as file:
         file.truncate(0)
         file.write(f'Test Accuracy: {100 * correct / total:.2f}%, Test Loss: {test_loss}')
         file.write(classification_report(all_labels, all_preds))
     return
 
-def test_with_noise(name, model, testloader, device, noise_std=0.1):
+def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
     model.eval()
     correct = 0
     total = 0
@@ -170,7 +169,7 @@ def test_with_noise(name, model, testloader, device, noise_std=0.1):
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
     plt.title(f'{name} Confusion Matrix (Noise Std = {noise_std})')
-    plt.savefig(f"./{name}_confusion_matrix_noise_{noise_std}.png")
+    plt.savefig(f"{folder}/{name}_confusion_matrix_noise_{noise_std}.png")
     plt.show()
 
     # Classification Report
@@ -236,11 +235,11 @@ def main():
     model.load_state_dict(torch.load("CNN_baseline_results/CNN_baseline.pth", map_location=device, weights_only=False))
     model.eval()
 
-    test("CNN_baseline", model, test_loader, device)
-    test_with_noise("CNN_baseline", model, test_loader, device, noise_std=0.1)
-    test_with_noise("CNN_baseline", model, test_loader, device, noise_std=0.4)
-    test_with_noise("CNN_baseline", model, test_loader, device, noise_std=0.7)
-    test_with_noise("CNN_baseline", model, test_loader, device, noise_std=1.0)
+    test("CNN_baseline", "CNN_baseline_results", model, test_loader, device)
+    test_with_noise("CNN_baseline", "CNN_baseline_results", model, test_loader, device, noise_std=0.1)
+    test_with_noise("CNN_baseline", "CNN_baseline_results",  model, test_loader, device, noise_std=0.4)
+    test_with_noise("CNN_baseline", "CNN_baseline_results", model, test_loader, device, noise_std=0.7)
+    test_with_noise("CNN_baseline", "CNN_baseline_results", model, test_loader, device, noise_std=1.0)
 
 if __name__ == '__main__':
     main()
