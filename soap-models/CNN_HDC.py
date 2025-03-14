@@ -27,9 +27,9 @@ class CNNFeatureExtractor(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.feature_size = 64 * 4 * 4
+        self.feature_size = 64 * 20 * 20
         self.fc1 = nn.Linear(self.feature_size, 512)
-        self.classifier = nn.Linear(512, 100)  # Output 100 classes for CIFAR-100
+        self.classifier = nn.Linear(512, 10)  # Output 100 classes for CIFAR-100
     
         # Chopped off the classifier layer
 
@@ -46,7 +46,7 @@ class CNNFeatureExtractor(nn.Module):
         
 # This class is a combination of the CNNFeatureExtractor and LeHDC classes
 class CNN_HDC(nn.Module):
-    def __init__(self, n_dimensions=10000, n_classes=100, n_levels=100, grid_size=5):
+    def __init__(self, n_dimensions=10000, n_classes=10, n_levels=100, grid_size=5):
         super(CNN_HDC, self).__init__()
         self.feature_network = CNNFeatureExtractor(grid_size=grid_size)
         
@@ -60,7 +60,7 @@ class CNN_HDC(nn.Module):
             max_level=1,
             epochs=40,
             dropout_rate=0.2,
-            lr=0.01,
+            lr=0.005,
             device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
         )
         
