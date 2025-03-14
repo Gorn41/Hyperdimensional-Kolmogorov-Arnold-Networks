@@ -11,7 +11,7 @@ import numpy as np
 from sklearn.metrics import confusion_matrix, classification_report
 import seaborn as sns
 import pandas as pd
-from util.kan_convolutional.KANConv import KAN_Convolutional_Layer
+from kan_convolutional.KANConv import KAN_Convolutional_Layer
 
 class KAN(nn.Module):
     def __init__(self, grid_size: int = 5):
