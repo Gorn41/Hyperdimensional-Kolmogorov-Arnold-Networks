@@ -46,24 +46,23 @@ class CNNFeatureExtractor(nn.Module):
         
 # This class is a combination of the CNNFeatureExtractor and LeHDC classes
 class CNN_HDC(nn.Module):
-    def __init__(self, n_dimensions=1000, n_classes=10, n_levels=50, grid_size=5):
+    def __init__(self, n_dimensions=10000, n_classes=10, n_levels=100, grid_size=5):
         super(CNN_HDC, self).__init__()
         self.feature_network = CNNFeatureExtractor(grid_size=grid_size)
         
         # LeHDC classifier as a separate component
         self.lehdc = LeHDC(
-            n_features=96,
+            n_features=98,
             n_dimensions=n_dimensions,
             n_classes=n_classes,
             n_levels=n_levels,
             min_level=-1,
             max_level=1,
-            epochs=50,
+            epochs=90,
             dropout_rate=0.3,
-            lr=0.001,
+            lr=0.0001,
             device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
         )
-        self.dropout = nn.Dropout(0.4)
         
         self.lehdc_trained = False
 
