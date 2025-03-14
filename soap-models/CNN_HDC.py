@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torchhd
-from classifiers import LeHDC
+from util.classifiers import LeHDC
 from torch.utils.data import DataLoader, Subset
 from torchvision import datasets, transforms
 import torchvision
