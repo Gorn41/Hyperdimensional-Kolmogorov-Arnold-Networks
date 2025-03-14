@@ -14,24 +14,31 @@ from sklearn.metrics import confusion_matrix, classification_report
 import seaborn as sns
 import csv
 import pandas as pd
-from kan_convolutional.KANConv import KAN_Convolutional_Layer
 
 class LeHDCCNN(nn.Module):
-    def __init__(self, hdc_dimensions=1000, n_classes=10, dropout_rate=0.1, n_levels=200):
+    def __init__(self, hdc_dimensions=10000, n_classes=10, dropout_rate=0.1, n_levels=200):
         super(LeHDCCNN, self).__init__()
         
-
         self.conv1 = nn.Conv2d(1, 5, kernel_size=3)
         self.conv2 = nn.Conv2d(5, 5, kernel_size=3)
-        self.conv3 = nn.Conv2d(5, 15, kernel_size=3)
+        self.conv3 = nn.Conv2d(5, 25, kernel_size=3)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.fc = nn.Linear(1215, 750)
+        self.fc = nn.Linear(2025, 1500)
         self.tanh = nn.Tanh()
         self.dropout = nn.Dropout(dropout_rate)
 
-        self.fc2 = nn.Linear(750, 10)
+        self.lehdc = LeHDC(
+            n_features=1500,           
+            n_dimensions=hdc_dimensions,
+            n_classes=n_classes,
+            n_levels=n_levels,             # you can kind of think of this as rounding
+            min_level=-1,             # don't change this
+            max_level=1,              # don'change this
+            epochs=200,                # scale with the other epoch param
+            lr=0.0001              # don't change this
+        )
 
         
     def forward(self, x):
@@ -42,8 +49,7 @@ class LeHDCCNN(nn.Module):
         x = self.flatten(x)
         
         x = self.fc(x)
-        x = self.dropout(x)
-        x = self.fc2(x)
+        x = self.lehdc(x)
         
         return x
 
@@ -63,7 +69,7 @@ def load_mnist_data(batch_size=34):
     
     return train_loader, valloader, test_loader
 
-def train(model, train_loader, optimizer, criterion, device, epoch):
+def train_with_corrupted_labels(model, train_loader, optimizer, criterion, device, epoch, corruption_prob=0.2):
     model.train()
     running_loss = 0.0
     correct = 0
@@ -72,16 +78,35 @@ def train(model, train_loader, optimizer, criterion, device, epoch):
     for batch_idx, (images, labels) in enumerate(train_loader):
         images, labels = images.to(device), labels.to(device)
         
+        # Create a corruption mask based on probability
+        corruption_mask = torch.rand(labels.size(), device=device) < corruption_prob
+        
+        # Generate random incorrect labels
+        num_classes = 10  # For Fashion MNIST
+        random_labels = torch.randint(0, num_classes, labels.size(), device=device)
+        
+        # Make sure random labels are different from original labels
+        same_label_mask = random_labels == labels
+        while same_label_mask.any():
+            # Re-sample for positions where random label equals original label
+            random_labels[same_label_mask] = torch.randint(
+                0, num_classes, (same_label_mask.sum(),), device=device
+            )
+            same_label_mask = random_labels == labels
+        
+        # Apply corruption: keep original labels where mask is False, use random labels where mask is True
+        corrupted_labels = torch.where(corruption_mask, random_labels, labels)
+        
         optimizer.zero_grad()
         outputs = model(images)
-        loss = criterion(outputs, labels)
+        loss = criterion(outputs, corrupted_labels)
         loss.backward()
         optimizer.step()
         
         running_loss += loss.item()
         _, predicted = outputs.max(1)
         total += labels.size(0)
-        correct += predicted.eq(labels).sum().item()
+        correct += predicted.eq(labels).sum().item()  # Compare with original labels for reporting
         
         if (batch_idx + 1) % 100 == 0:
             print(f'Epoch: {epoch}, Batch: {batch_idx+1}/{len(train_loader)}, Loss: {loss.item():.4f}, Accuracy: {100.*correct/total:.2f}%')
@@ -127,13 +152,9 @@ def test(model, testloader, device):
         for images, labels in tqdm.tqdm(testloader, total=batch_size):
             images, labels = images.to(device), labels.to(device)
             outputs = model(images)
-            # print(outputs)
-            # print(outputs.shape)
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-            # loss = loss_func(outputs.float(), labels)
-            # total_loss += loss.item() * images.size(0)
             all_preds.extend(predicted.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 
@@ -220,7 +241,8 @@ def main():
     num_epochs = 10
     hdc_dimensions = 10000
     dropout_rate = 0.0
-    n_levels = 150 # you can kind of think of this as rounding sensitivity
+    n_levels = 100
+    corruption_prob = 0.2  # Probability of label corruption
     
     train_loader, valloader, test_loader = load_mnist_data(batch_size)
     model = LeHDCCNN(hdc_dimensions=hdc_dimensions, n_classes=10, dropout_rate=dropout_rate, n_levels=n_levels).to(device)
@@ -228,9 +250,8 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     
     best_val_acc = 0
-    
     for epoch in range(num_epochs):
-        train_loss, train_acc = train(model, train_loader, optimizer, criterion, device, epoch+1)
+        train_loss, train_acc = train_with_corrupted_labels(model, train_loader, optimizer, criterion, device, epoch+1, corruption_prob)
         val_loss, val_acc = valtest(model, valloader, criterion, device)
         
         print(f'Epoch {epoch+1}/{num_epochs}:')
@@ -239,14 +260,12 @@ def main():
         
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            torch.save(model.state_dict(), 'cnn_lehdc_best.pth')
+            torch.save(model.state_dict(), 'cnn_lehdc_corrupted_labels_best.pth')
             print(f'Model saved with val accuracy: {val_acc:.2f}%')
     
     print(f'Best val accuracy: {best_val_acc:.2f}%')
 
-
-    model.load_state_dict(torch.load("cnn_lehdc_best.pth", map_location=device, weights_only=False))
-
+    model.load_state_dict(torch.load("cnn_lehdc_corrupted_labels_best.pth", map_location=device, weights_only=False))
     model.eval()
 
     test(model, test_loader, device)
