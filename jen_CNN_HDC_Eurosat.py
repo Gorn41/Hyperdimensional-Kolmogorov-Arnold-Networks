@@ -34,7 +34,6 @@ class CNNFeatureExtractor(nn.Module):
         x = self.pool(F.relu(self.conv2(x)))
         x = torch.flatten(x, 1)  # Flatten
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
         return x
         
 # This class is a combination of the CNNFeatureExtractor and LeHDC classes
@@ -45,7 +44,7 @@ class CNN_HDC(nn.Module):
         
         # LeHDC classifier as a separate component
         self.lehdc = LeHDC(
-            n_features=84, 
+            n_features=120, 
             n_dimensions=n_dimensions,
             n_classes=n_classes,
             n_levels=n_levels,
