@@ -16,21 +16,21 @@ import csv
 import pandas as pd
 
 class LeHDCCNN(nn.Module):
-    def __init__(self, hdc_dimensions=10000, n_classes=10, dropout_rate=0.1, n_levels=200):
+    def __init__(self, hdc_dimensions=10000, n_classes=10, dropout_rate=0.1, n_levels=100):
         super(LeHDCCNN, self).__init__()
         
         self.conv1 = nn.Conv2d(1, 5, kernel_size=3)
         self.conv2 = nn.Conv2d(5, 5, kernel_size=3)
-        self.conv3 = nn.Conv2d(5, 25, kernel_size=3)
+        self.conv3 = nn.Conv2d(5, 15, kernel_size=3)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.fc = nn.Linear(2025, 1500)
+        self.fc = nn.Linear(1215, 750)
         self.tanh = nn.Tanh()
         self.dropout = nn.Dropout(dropout_rate)
 
         self.lehdc = LeHDC(
-            n_features=1500,           
+            n_features=750,           
             n_dimensions=hdc_dimensions,
             n_classes=n_classes,
             n_levels=n_levels,             # you can kind of think of this as rounding
