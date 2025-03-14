@@ -3,7 +3,7 @@ import torch.nn as nn
 import torchhd
 from classifiers import LeHDC
 from torch.utils.data import DataLoader, Subset
-from torchvision.datasets import MNIST
+from torchvision import datasets, transforms
 import torchvision
 import tqdm
 import torch.nn.functional as F
@@ -14,7 +14,6 @@ from sklearn.metrics import confusion_matrix, classification_report
 import seaborn as sns
 import csv
 import pandas as pd
-from kan_convolutional.KANConv import KAN_Convolutional_Layer
 
 # Same as the CNN class in soap-models/CNN_baseline.py, except the classifier layer is removed
 # This is a "template" class that can be used to create a CNN model with a custom classifier
@@ -22,17 +21,16 @@ from kan_convolutional.KANConv import KAN_Convolutional_Layer
 class CNNFeatureExtractor(nn.Module):
     def __init__(self, grid_size=5):
         super(CNNFeatureExtractor, self).__init__()
-        self.feature_extractor = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=3, padding=1),
-            
-            nn.Conv2d(16, 32, kernel_size=3, padding=1),
-            nn.Conv2d(32, 64, kernel_size=3, padding=1),
-            nn.MaxPool2d(kernel_size=(2, 2)),
-        )
-        
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)  # Change input channels to 3 (RGB)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
+
         self.feature_size = 64 * 4 * 4
-        self.fc = nn.Linear(self.feature_size, 512)
+        self.fc1 = nn.Linear(self.feature_size, 512)
+        self.classifier = nn.Linear(512, 100)  # Output 100 classes for CIFAR-100
+    
         # Chopped off the classifier layer
 
 
@@ -42,28 +40,27 @@ class CNNFeatureExtractor(nn.Module):
         x = self.pool(F.relu(self.conv3(x)))
         x = self.flatten(x)
         x = F.relu(self.fc1(x))
-        x = self.dropout(x)
         # Chopped off the classifier layer
 
         return x
         
 # This class is a combination of the CNNFeatureExtractor and LeHDC classes
 class CNN_HDC(nn.Module):
-    def __init__(self, n_dimensions=10000, n_classes=10, n_levels=100, grid_size=5):
+    def __init__(self, n_dimensions=10000, n_classes=100, n_levels=100, grid_size=5):
         super(CNN_HDC, self).__init__()
         self.feature_network = CNNFeatureExtractor(grid_size=grid_size)
         
         # LeHDC classifier as a separate component
         self.lehdc = LeHDC(
-            n_features=750,
+            n_features=512,
             n_dimensions=n_dimensions,
             n_classes=n_classes,
             n_levels=n_levels,
             min_level=-1,
             max_level=1,
-            epochs=200,
+            epochs=40,
             dropout_rate=0.2,
-            lr=0.001,
+            lr=0.01,
             device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
         )
         
@@ -231,36 +228,48 @@ def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def main():
-    num_epochs = 5
-    batch_sz = 32
-
-    model = CNN_HDC()
-
-    transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(), torchvision.transforms.Normalize((0.1307,), (0.3081,))])
-
-    train_data = torchvision.datasets.FashionMNIST(root='data', train=True, download=True, transform=transform)
-    other_data = torchvision.datasets.FashionMNIST(root='data', train=False, download=True, transform=transform)
+def load_CIFAR100_data(batch_size=34):
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+    
+    train_data = torchvision.datasets.CIFAR100(root='data', train=True, download=True, transform=transform)
+    other_data = torchvision.datasets.CIFAR100(root='data', train=False, download=True, transform=transform)
     val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
 
-    trainloader = torch.utils.data.DataLoader(train_data, batch_size=batch_sz, shuffle=True)
-    valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_sz, shuffle=True)
-    testloader = torch.utils.data.DataLoader(test_data, batch_size=batch_sz)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
+    valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_size, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size)
+    
+    return train_loader, valloader, test_loader
+
+def main():
+     # Hyperparams
+    batch_size = 32
+    learning_rate = 0.001
+    num_epochs = 10
+    hdc_dimensions = 10000
+    dropout_rate = 0.0
+    n_levels = 150 # you can kind of think of this as rounding sensitivity
+
+    model = CNN_HDC()
+    train_loader, valloader, test_loader = load_CIFAR100_data(batch_size)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
-    model.feature_network.load_state_dict(torch.load("CNN_HDC_results/CNN_baseline.pth", map_location=device))
+    model.feature_network.load_state_dict(torch.load("CNN_baseline_results/CNN_baseline.pth", map_location=device))
 
-    model.train_lehdc(trainloader, valloader)
+    model.train_lehdc(train_loader, valloader)
 
     model.eval()
 
-    test("CNN_HDC", "CNN_HDC_results", model, testloader, device)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, testloader, device, noise_std=0.1)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, testloader, device, noise_std=0.4)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, testloader, device, noise_std=0.7)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, testloader, device, noise_std=1.0)
+    test("CNN_HDC", "CNN_HDC_results", model, test_loader, device)
+    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=0.1)
+    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=0.4)
+    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=0.7)
+    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=1.0)
 
 if __name__ == '__main__':
     main()

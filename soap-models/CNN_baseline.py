@@ -182,7 +182,7 @@ def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def load_mnist_data(batch_size=34):
+def load_CIFAR100_data(batch_size=34):
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
@@ -210,7 +210,7 @@ def main():
     dropout_rate = 0.0
     n_levels = 150 # you can kind of think of this as rounding sensitivity
     
-    train_loader, valloader, test_loader = load_mnist_data(batch_size)
+    train_loader, valloader, test_loader = load_CIFAR100_data(batch_size)
     model = CNN().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
