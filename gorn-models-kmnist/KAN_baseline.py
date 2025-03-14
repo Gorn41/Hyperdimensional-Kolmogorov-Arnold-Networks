@@ -29,19 +29,24 @@ class KAN(nn.Module):
             padding=(1,1)
         )
 
+        self.conv3 = KAN_Convolutional_Layer(in_channels=2,
+            out_channels= 1,
+            kernel_size= (3,3),
+            grid_size = grid_size,
+        )
+
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
         # Adjusting input size for the fully connected layer based on Imagenette resolution (assume 160x160)
         # self.fc1 = nn.Linear(1215, 750)  # Adjust if image size changes
-        self.classifier = nn.Linear(98, 10)  # Output 10 classes for Imagenette
+        self.classifier = nn.Linear(25, 10)  # Output 10 classes for Imagenette
 
     def forward(self, x):
         x = self.pool(self.conv1(x))
         x = self.pool(self.conv2(x))
         x = self.flatten(x)
 
-        x = self.fc1(x)
         x = self.classifier(x)
 
         return x
@@ -197,8 +202,8 @@ def load_mnist_data(batch_size=32):
         transforms.Normalize((0.1307,), (0.3081,))
     ])
     
-    train_data = torchvision.datasets.FashionMNIST(root='data', train=True, download=True, transform=transform)
-    other_data = torchvision.datasets.FashionMNIST(root='data', train=False, download=True, transform=transform)
+    train_data = torchvision.datasets.KMNIST(root='data', train=True, download=True, transform=transform)
+    other_data = torchvision.datasets.KMNIST(root='data', train=False, download=True, transform=transform)
     val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)

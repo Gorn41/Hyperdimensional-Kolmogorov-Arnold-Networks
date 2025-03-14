@@ -675,9 +675,9 @@ class LeHDC(Classifier):
             vallosses.append(val_loss)
             avg_train_loss = accumulated_loss / num_batches
             trainlosses.append(avg_train_loss)
-            # if val_acc > best_acc:
-            #     best_acc = val_acc
-            #     best_model = self.model.weight.data
+            if val_acc > best_acc:
+                best_acc = val_acc
+                best_model = self.model.weight.data
 
         plt.figure()
         plt.plot(np.arange(1, self.epochs + 1), valaccs)
@@ -694,7 +694,7 @@ class LeHDC(Classifier):
         plt.legend()
         plt.savefig("./LeHDC_train_val_loss.png")
         plt.close('all')
-        # self.model.weight.data = best_model
+        self.model.weight.data = best_model
         return self
 
 

@@ -236,8 +236,8 @@ def load_mnist_data(batch_size=32):
         transforms.Normalize((0.1307,), (0.3081,))
     ])
     
-    train_data = torchvision.datasets.FashionMNIST(root='data', train=True, download=True, transform=transform)
-    other_data = torchvision.datasets.FashionMNIST(root='data', train=False, download=True, transform=transform)
+    train_data = torchvision.datasets.KMNIST(root='data', train=True, download=True, transform=transform)
+    other_data = torchvision.datasets.KMNIST(root='data', train=False, download=True, transform=transform)
     val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)

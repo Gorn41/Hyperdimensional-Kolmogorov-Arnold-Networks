@@ -23,49 +23,42 @@ class KANFeatureExtractor(nn.Module):
     def __init__(self, grid_size=5):
         super(KANFeatureExtractor, self).__init__()
         self.conv1 = KAN_Convolutional_Layer(in_channels=1,
-            out_channels= 5,
+            out_channels= 2,
             kernel_size= (3,3),
-            grid_size = grid_size
+            grid_size = grid_size,
+            padding=(1,1)
         )
-        self.conv2 = KAN_Convolutional_Layer(in_channels=5,
-            out_channels= 10,
+        self.conv2 = KAN_Convolutional_Layer(in_channels=2,
+            out_channels= 2,
             kernel_size= (3,3),
-            grid_size = grid_size
-        )
-        self.conv3 = KAN_Convolutional_Layer(in_channels=10,
-            out_channels= 15,
-            kernel_size= (3,3),
-            grid_size = grid_size
+            grid_size = grid_size,
+            padding=(1,1)
         )
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.feature_size = 1215
-        self.fc1 = nn.Linear(self.feature_size, 750)
-        self.classifier = nn.Linear(750, 10)  # Output 100 classes for CIFAR-100
+        self.classifier = nn.Linear(98, 10)  # Output 100 classes for CIFAR-100
     
         # Chopped off the classifier layer
 
 
     def forward(self, x):
-        x = self.pool(self.conv1(x)) # Apply ReLU activation
-        x = self.conv2(x)
-        x = self.conv3(x)
+        x = self.pool(self.conv1(x))
+        x = self.pool(self.conv2(x))
         x = self.flatten(x)
-        x = self.fc1(x)
         # Chopped off the classifier layer
 
         return x
         
 # This class is a combination of the KANFeatureExtractor and LeHDC classes
 class KAN_HDC(nn.Module):
-    def __init__(self, n_dimensions=500, n_classes=100, n_levels=25, grid_size=5):
+    def __init__(self, n_dimensions=200, n_classes=10, n_levels=40, grid_size=5):
         super(KAN_HDC, self).__init__()
         self.feature_network = KANFeatureExtractor(grid_size=grid_size)
         
         # LeHDC classifier as a separate component
         self.lehdc = LeHDC(
-            n_features=750,
+            n_features=98,
             n_dimensions=n_dimensions,
             n_classes=n_classes,
             n_levels=n_levels,
