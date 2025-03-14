@@ -40,7 +40,6 @@ class CNNFeatureExtractor(nn.Module):
         x = self.pool(F.relu(self.conv3(x)))
         x = self.flatten(x)
         x = F.relu(self.fc1(x))
-        x = self.dropout(x)
         # Chopped off the classifier layer
 
         return x
