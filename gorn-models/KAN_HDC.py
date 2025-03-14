@@ -29,7 +29,7 @@ class KANFeatureExtractor(nn.Module):
             padding=(1,1)
         )
         self.conv2 = KAN_Convolutional_Layer(in_channels=2,
-            out_channels= 2,
+            out_channels= 1,
             kernel_size= (3,3),
             grid_size = grid_size,
             padding=(1,1)
@@ -37,7 +37,7 @@ class KANFeatureExtractor(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.classifier = nn.Linear(98, 10)  # Output 100 classes for CIFAR-100
+        self.classifier = nn.Linear(49, 10)  # Output 100 classes for CIFAR-100
     
         # Chopped off the classifier layer
 
@@ -52,7 +52,7 @@ class KANFeatureExtractor(nn.Module):
         
 # This class is a combination of the KANFeatureExtractor and LeHDC classes
 class KAN_HDC(nn.Module):
-    def __init__(self, n_dimensions=300, n_classes=10, n_levels=40, grid_size=5):
+    def __init__(self, n_dimensions=200, n_classes=10, n_levels=60, grid_size=5):
         super(KAN_HDC, self).__init__()
         self.feature_network = KANFeatureExtractor(grid_size=grid_size)
         
