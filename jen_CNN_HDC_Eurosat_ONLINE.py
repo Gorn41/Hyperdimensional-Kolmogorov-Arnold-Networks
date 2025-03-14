@@ -38,24 +38,38 @@ class CNNFeatureExtractor(nn.Module):
 
         
 # This class is a combination of the CNNFeatureExtractor and LeHDC classes
-from torchhd import embeddings, structures
 
 class CNN_HDC(nn.Module):
     def __init__(self, n_dimensions=20000, n_classes=10, sparsity=0.05, grid_size=5, num_embeddings=512, embedding_dim=20000):
         super(CNN_HDC, self).__init__()
         self.feature_network = CNNFeatureExtractor(grid_size=grid_size)
 
-        # Update the Sparse encoder with the additional parameters
-        self.sparse_encoder = embeddings.Random(num_embeddings=num_embeddings, embedding_dim=embedding_dim, sparsity=sparsity)
-        
+        # Initialize the Sparse encoder
+        self.sparse_encoder = embeddings.Random(num_embeddings=num_embeddings, embedding_dim=embedding_dim)
+
+        # Apply sparsity manually
+        self.sparsity = sparsity
+
         # Use SparseHD for classification
         self.hdc = structures.SparseHD(n_classes, embedding_dim).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
         self.hdc_trained = False
 
     def forward(self, x):
         features = self.feature_network.forward(x)
-        hd_rep = self.sparse_encoder(features)  # Convert features to SparseHD representation
+        
+        # Get the sparse encoding
+        hd_rep = self.sparse_encoder(features)  
+
+        # Manually apply sparsity (zeroing out some elements)
+        hd_rep = self.apply_sparsity(hd_rep)
+        
         return self.hdc(hd_rep)
+
+    def apply_sparsity(self, tensor):
+        # Apply sparsity by zeroing out random elements
+        mask = torch.rand_like(tensor) > self.sparsity
+        sparse_tensor = tensor * mask
+        return sparse_tensor
 
     def train_hdc(self, train_loader, val_loader):
         features, labels = [], []
@@ -71,6 +85,7 @@ class CNN_HDC(nn.Module):
 
         # Convert features to sparse HD representations
         hd_features = self.sparse_encoder(features)
+        hd_features = self.apply_sparsity(hd_features)
 
         # Train SparseHD classifier
         self.hdc.fit(hd_features, labels)
@@ -86,6 +101,7 @@ class CNN_HDC(nn.Module):
             val_features = torch.cat(val_features, dim=0)
             val_labels = torch.cat(val_labels, dim=0)
             hd_val_features = self.sparse_encoder(val_features)
+            hd_val_features = self.apply_sparsity(hd_val_features)
 
             val_preds = self.hdc(hd_val_features)
             val_accuracy = (val_preds.argmax(dim=1) == val_labels).float().mean().item()
