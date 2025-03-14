@@ -285,7 +285,7 @@ def main(trainingmode=True):
     num_epochs = 10
     batch_sz = 32
     learning_rate = 0.001
-
+    name = "optimizedCNNLeHDC"
     model = KANCLeHDCModel()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
@@ -309,11 +309,11 @@ def main(trainingmode=True):
 
     model.eval()
 
-    test(model, testloader, device)
-    test_with_noise(model, testloader, device, noise_std=0.1)
-    test_with_noise(model, testloader, device, noise_std=0.4)
-    test_with_noise(model, testloader, device, noise_std=0.7)
-    test_with_noise(model, testloader, device, noise_std=1.0)
+    test(name, model, testloader, device)
+    test_with_noise(name, model, testloader, device, noise_std=0.1)
+    test_with_noise(name, model, testloader, device, noise_std=0.4)
+    test_with_noise(name, model, testloader, device, noise_std=0.7)
+    test_with_noise(name, model, testloader, device, noise_std=1.0)
 
 if __name__ == '__main__':
     main()
