@@ -59,16 +59,18 @@ class CNN_HDC(nn.Module):
             min_level=-1,
             max_level=1,
             epochs=50,
-            dropout_rate=0.6,
+            dropout_rate=0.3,
             lr=0.001,
             device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
         )
+        self.dropout = nn.Dropout(0.4)
         
         self.lehdc_trained = False
 
     # Forward pass through the feature extractor and the LeHDC classifier
     def forward(self, x):
         features = self.feature_network.forward(x)
+        features = self.dropout(features)
         return self.lehdc(features)
 
     def train_lehdc(self, train_loader, val_loader):
