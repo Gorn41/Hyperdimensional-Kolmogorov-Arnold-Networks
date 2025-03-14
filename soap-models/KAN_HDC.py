@@ -240,7 +240,7 @@ def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def load_Imagenette_data(batch_size=34):
+def load_Imagenette_data(batch_size):
     transform = transforms.Compose([
         transforms.Resize((160, 160)),  # Resize all images to 160x160
         transforms.ToTensor(),  # Convert images to PyTorch tensors
@@ -260,7 +260,7 @@ def load_Imagenette_data(batch_size=34):
 
 def main():
      # Hyperparams
-    batch_size = 32
+    batch_size = 16
 
     model = KAN_HDC()
     train_loader, valloader, test_loader = load_Imagenette_data(batch_size)
