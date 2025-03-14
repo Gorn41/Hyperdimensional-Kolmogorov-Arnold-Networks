@@ -51,7 +51,7 @@ class KANCFeatureExtractor(nn.Module):
 
 
 class KANCLeHDCModel(nn.Module):
-    def __init__(self, n_dimensions=20000, n_classes=10, n_levels=100, grid_size=5):
+    def __init__(self, n_dimensions=10000, n_classes=10, n_levels=200, grid_size=5):
         super(KANCLeHDCModel, self).__init__()
         self.feature_network = KANCFeatureExtractor(grid_size=grid_size)
         
