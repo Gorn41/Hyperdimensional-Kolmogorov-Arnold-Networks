@@ -14,7 +14,7 @@ import pandas as pd
 from kan_convolutional.KANConv import KAN_Convolutional_Layer
 
 class KAN(nn.Module):
-    def __init__(self, grid_size: int = 5):
+    def __init__(self, grid_size: int = 7):
         super(KAN, self).__init__()
         self.conv1 = KAN_Convolutional_Layer(in_channels=1,
             out_channels= 2,
