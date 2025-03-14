@@ -115,9 +115,11 @@ def test(model, testloader, device):
         for images, labels in tqdm.tqdm(testloader, total=batch_size):
             images, labels = images.to(device), labels.to(device)
             outputs = model(images)
+            
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
+            
             all_preds.extend(predicted.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 
@@ -131,7 +133,6 @@ def test(model, testloader, device):
     plt.ylabel('Actual')
     plt.title('Eurosat Confusion Matrix (No Noise)')
     plt.savefig("./Eurosat_results/Eurosat_baselineCNN_confusion_matrix_no_noise.png")
-    plt.show()
 
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
