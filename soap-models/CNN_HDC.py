@@ -26,9 +26,11 @@ class CNNFeatureExtractor(nn.Module):
         self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
-        
+
         self.feature_size = 64 * 4 * 4
-        self.fc = nn.Linear(self.feature_size, 512)
+        self.fc1 = nn.Linear(self.feature_size, 512)
+        self.classifier = nn.Linear(512, 100)  # Output 100 classes for CIFAR-100
+    
         # Chopped off the classifier layer
 
 
