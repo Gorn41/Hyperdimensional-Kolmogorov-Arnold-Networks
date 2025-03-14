@@ -31,7 +31,6 @@ class KAN(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
         
-        self.fc1 = nn.Linear(1000, 98)
         self.classifier = nn.Linear(98, 10)  # Output 10 classes for Eurosat
 
     def forward(self, x):
@@ -39,7 +38,6 @@ class KAN(nn.Module):
         x = self.conv2(x)  # Apply conv2
         x = self.flatten(x)  # Flatten the tensor for the fully connected layer
 
-        x = self.fc1(x)  # Fully connected layer
         x = self.classifier(x)  # Final classifier layer
 
         return x
