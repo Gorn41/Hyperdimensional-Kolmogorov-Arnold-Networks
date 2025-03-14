@@ -52,7 +52,7 @@ class KANFeatureExtractor(nn.Module):
         
 # This class is a combination of the KANFeatureExtractor and LeHDC classes
 class KAN_HDC(nn.Module):
-    def __init__(self, n_dimensions=800, n_classes=10, n_levels=100, grid_size=5):
+    def __init__(self, n_dimensions=900, n_classes=10, n_levels=100, grid_size=5):
         super(KAN_HDC, self).__init__()
         self.feature_network = KANFeatureExtractor(grid_size=grid_size)
         
