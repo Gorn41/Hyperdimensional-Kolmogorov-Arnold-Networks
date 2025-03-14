@@ -41,6 +41,8 @@ class KAN(nn.Module):
     def forward(self, x):
         x = self.pool(self.conv1(x))
         x = self.conv2(x)
+        x = self.conv3(x)
+    
         x = self.flatten(x)
 
         x = self.fc1(x)
