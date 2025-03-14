@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torchhd
-from classifiers import OnlineHD
+from classifiers import SparseHD
 from torch.utils.data import DataLoader, Subset
 from torchvision import datasets, transforms
 import torchvision
@@ -51,7 +51,7 @@ class CNN_HDC(nn.Module):
         self.sparsity = sparsity
 
         # Use SparseHD for classification
-        self.hdc = structures.SparseHD(n_classes, embedding_dim).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+        self.hdc = SparseHD(n_classes, embedding_dim).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
         self.hdc_trained = False
 
     def forward(self, x):
