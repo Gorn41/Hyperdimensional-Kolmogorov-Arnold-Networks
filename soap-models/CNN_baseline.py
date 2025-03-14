@@ -175,7 +175,7 @@ def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
     # Classification Report
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
-    with open(f"./{name}_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
+    with open(f"{folder}/{name}_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
         file.truncate(0)
         file.write(f'Test Accuracy: {accuracy:.2f}%, Test Loss: {test_loss}\n')
         file.write(classification_report(all_labels, all_preds))
