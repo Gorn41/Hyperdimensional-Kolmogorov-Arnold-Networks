@@ -219,7 +219,7 @@ def main():
     print(f"Using device: {device}")
     
     # Hyperparams
-    batch_size = 4
+    batch_size = 16
     learning_rate = 0.001
     num_epochs = 10
     
