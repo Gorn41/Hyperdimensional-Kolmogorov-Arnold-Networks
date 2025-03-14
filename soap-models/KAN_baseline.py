@@ -22,7 +22,7 @@ class KAN(nn.Module):
             grid_size = grid_size
         )
         self.conv2 = KAN_Convolutional_Layer(in_channels=4,
-            out_channels= 8,
+            out_channels= 6,
             kernel_size= (10,10),
             grid_size = grid_size
         )
@@ -211,7 +211,7 @@ def main():
     print(f"Using device: {device}")
     
     # Hyperparams
-    batch_size = 8
+    batch_size = 4
     learning_rate = 0.001
     num_epochs = 5
     
