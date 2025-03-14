@@ -23,15 +23,15 @@ class CNNFeatureExtractor(nn.Module):
         super(CNNFeatureExtractor, self).__init__()
         self.conv1 = nn.Conv2d(3, 6, kernel_size=5, padding=2)  # 64x64 -> 64x64
         self.conv2 = nn.Conv2d(6, 16, kernel_size=5)  # 32x32 -> 28x28
-        self.fc1 = nn.Linear(16 * 14 * 14, 256)  # Increased from 256 to 512
-        self.fc2 = nn.Linear(256, 10) # Increased from 84 to 128
+        self.fc1 = nn.Linear(16 * 14 * 14, 512)  # Increased from 256 to 512
+        self.fc2 = nn.Linear(512, 10) # Increased from 84 to 128
         self.pool = nn.MaxPool2d(2, 2)  # 64x64 -> 32x32
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
         x = torch.flatten(x, 1)  # Flatten
-        x = F.relu(self.fc1(x))
+        x = self.fc1(x)
         return x
 
         
@@ -43,13 +43,13 @@ class CNN_HDC(nn.Module):
         
         # Update LeHDC classifier input size to match new fc1 output size (512)
         self.lehdc = LeHDC(
-            n_features=256,  # Updated to match CNNFeatureExtractor
+            n_features=512,  # Updated to match CNNFeatureExtractor
             n_dimensions=n_dimensions,
             n_classes=n_classes,
             n_levels=n_levels,
             min_level=-1,
             max_level=1,
-            epochs=20,
+            epochs=30,
             dropout_rate=0.2,
             lr=0.005,
             device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -246,7 +246,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
-    model.feature_network.load_state_dict(torch.load("./Eurosat_results/CNN_baseline_results/Eurosat_baselineCNN_best.pth", map_location=device))
+    model.feature_network.load_state_dict(torch.load("./Eurosat_results/Eurosat_baselineCNN_best.pth", map_location=device))
 
     model.train_lehdc(train_loader, valloader)
 
