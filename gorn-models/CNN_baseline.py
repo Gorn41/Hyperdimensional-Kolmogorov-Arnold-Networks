@@ -16,23 +16,23 @@ import pandas as pd
 class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)  
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(1, 5, kernel_size=3)  
+        self.conv2 = nn.Conv2d(5, 10, kernel_size=3)
+        self.conv3 = nn.Conv2d(10, 15, kernel_size=3)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
         # Adjusting input size for the fully connected layer based on Imagenette resolution (assume 160x160)
-        self.fc1 = nn.Linear(64 * 20 * 20, 512)  # Adjust if image size changes
-        self.classifier = nn.Linear(512, 10)  # Output 10 classes for Imagenette
+        self.fc1 = nn.Linear(1215, 750)  # Adjust if image size changes
+        self.classifier = nn.Linear(750, 10)  # Output 10 classes for Imagenette
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))  
-        x = self.pool(F.relu(self.conv2(x)))
-        x = self.pool(F.relu(self.conv3(x)))
+        x = self.pool(self.conv1(x))
+        x = self.conv2(x)
+        x = self.conv3(x)
         x = self.flatten(x)
 
-        x = F.relu(self.fc1(x))
+        x = self.fc1(x)
         x = self.classifier(x)
 
         return x
@@ -182,15 +182,14 @@ def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def load_Imagenette_data(batch_size=34):
+def load_mnist_data(batch_size=32):
     transform = transforms.Compose([
-        transforms.Resize((160, 160)),  # Resize all images to 160x160
-        transforms.ToTensor(),  # Convert images to PyTorch tensors
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Standard normalization
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
     ])
     
-    train_data = torchvision.datasets.Imagenette(root='data', split="train", download=True, transform=transform)
-    other_data = torchvision.datasets.Imagenette(root='data', split="val", download=True, transform=transform)
+    train_data = torchvision.datasets.FashionMNIST(root='data', train=True, download=True, transform=transform)
+    other_data = torchvision.datasets.FashionMNIST(root='data', train=False, download=True, transform=transform)
     val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
@@ -206,69 +205,41 @@ def main():
     # Hyperparams
     batch_size = 32
     learning_rate = 0.001
-    num_epochs = 2
-    hdc_dimensions = 10000
-    dropout_rate = 0.0
-    n_levels = 150 # you can kind of think of this as rounding sensitivity
+    num_epochs = 10
     
-    train_loader, valloader, test_loader = load_Imagenette_data(batch_size)
+    train_loader, valloader, test_loader = load_mnist_data(batch_size)
     model = CNN().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     
     best_val_acc = 0
     
-    # Lists to store metrics
-    train_losses, val_losses = [], []
-    train_accuracies, val_accuracies = [], []
-    
     for epoch in range(num_epochs):
         train_loss, train_acc = train(model, train_loader, optimizer, criterion, device, epoch+1)
         val_loss, val_acc = valtest(model, valloader, criterion, device)
-        
-        # Store metrics
-        train_losses.append(train_loss)
-        val_losses.append(val_loss)
-        train_accuracies.append(train_acc)
-        val_accuracies.append(val_acc)
         
         print(f'Epoch {epoch+1}/{num_epochs}:')
         print(f'Train Loss: {train_loss:.4f}, Train Accuracy: {train_acc:.2f}%')
         print(f'Val Loss: {val_loss:.4f}, Val Accuracy: {val_acc:.2f}%')
 
+        # plot training and validation loss, and training and validation accuracy
+        # save the plot as a .png file
+        plt.plot(epoch, train_loss, label='Training Loss')
+        plt.plot(epoch, val_loss, label='Validation Loss')
+        plt.plot(epoch, train_acc, label='Training Accuracy')
+        plt.plot(epoch, val_acc, label='Validation Accuracy')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss/Accuracy')
+        plt.legend()
+        plt.savefig('CNN_baseline_results/CNN_baseline_plot.png')
+        plt.show()
+        
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             torch.save(model.state_dict(), 'CNN_baseline_results/CNN_baseline.pth')
             print(f'Model saved with val accuracy: {val_acc:.2f}%')
     
     print(f'Best val accuracy: {best_val_acc:.2f}%')
-
-    # Plot accuracy and loss
-    epochs = range(1, num_epochs + 1)
-    plt.figure(figsize=(10, 5))
-    
-    # Loss plot
-    plt.subplot(1, 2, 1)
-    plt.plot(epochs, train_losses, label='Train Loss', marker='o')
-    plt.plot(epochs, val_losses, label='Val Loss', marker='o')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.title('Training and Validation Loss')
-    
-    # Accuracy plot
-    plt.subplot(1, 2, 2)
-    plt.plot(epochs, train_accuracies, label='Train Accuracy', marker='o')
-    plt.plot(epochs, val_accuracies, label='Val Accuracy', marker='o')
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy (%)')
-    plt.legend()
-    plt.title('Training and Validation Accuracy')
-    
-    # Save plot
-    plt.savefig('CNN_baseline_results/training_plot.png')
-    plt.show()
-
 
     model.load_state_dict(torch.load("CNN_baseline_results/CNN_baseline.pth", map_location=device, weights_only=False))
     model.eval()
