@@ -128,7 +128,7 @@ def validate(model, val_loader, loss_func, device):
 
     return (100 * correct / total, total_loss / len(val_loader.dataset))
 
-def test(name, folder, model, testloader, device):
+def test(folder, name, model, testloader, device):
     model.eval()
     correct = 0
     total = 0
@@ -168,7 +168,7 @@ def test(name, folder, model, testloader, device):
         file.write(classification_report(all_labels, all_preds))
     return
 
-def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
+def test_with_noise(folder, name, model, testloader, device, noise_std=0.1):
     model.eval()
     correct = 0
     total = 0
