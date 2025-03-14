@@ -218,32 +218,57 @@ def main():
     
     best_val_acc = 0
     
+    # Lists to store metrics
+    train_losses, val_losses = [], []
+    train_accuracies, val_accuracies = [], []
+    
     for epoch in range(num_epochs):
         train_loss, train_acc = train(model, train_loader, optimizer, criterion, device, epoch+1)
         val_loss, val_acc = valtest(model, valloader, criterion, device)
+        
+        # Store metrics
+        train_losses.append(train_loss)
+        val_losses.append(val_loss)
+        train_accuracies.append(train_acc)
+        val_accuracies.append(val_acc)
         
         print(f'Epoch {epoch+1}/{num_epochs}:')
         print(f'Train Loss: {train_loss:.4f}, Train Accuracy: {train_acc:.2f}%')
         print(f'Val Loss: {val_loss:.4f}, Val Accuracy: {val_acc:.2f}%')
 
-        # plot training and validation loss, and training and validation accuracy
-        # save the plot as a .png file
-        plt.plot(epoch, train_loss, label='Training Loss')
-        plt.plot(epoch, val_loss, label='Validation Loss')
-        plt.plot(epoch, train_acc, label='Training Accuracy')
-        plt.plot(epoch, val_acc, label='Validation Accuracy')
-        plt.xlabel('Epoch')
-        plt.ylabel('Loss/Accuracy')
-        plt.legend()
-        plt.savefig('CNN_baseline_results/CNN_baseline_plot.png')
-        plt.show()
-        
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             torch.save(model.state_dict(), 'CNN_baseline_results/CNN_baseline.pth')
             print(f'Model saved with val accuracy: {val_acc:.2f}%')
     
     print(f'Best val accuracy: {best_val_acc:.2f}%')
+
+    # Plot accuracy and loss
+    epochs = range(1, num_epochs + 1)
+    plt.figure(figsize=(10, 5))
+    
+    # Loss plot
+    plt.subplot(1, 2, 1)
+    plt.plot(epochs, train_losses, label='Train Loss', marker='o')
+    plt.plot(epochs, val_losses, label='Val Loss', marker='o')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.title('Training and Validation Loss')
+    
+    # Accuracy plot
+    plt.subplot(1, 2, 2)
+    plt.plot(epochs, train_accuracies, label='Train Accuracy', marker='o')
+    plt.plot(epochs, val_accuracies, label='Val Accuracy', marker='o')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy (%)')
+    plt.legend()
+    plt.title('Training and Validation Accuracy')
+    
+    # Save plot
+    plt.savefig('CNN_baseline_results/training_plot.png')
+    plt.show()
+
 
     model.load_state_dict(torch.load("CNN_baseline_results/CNN_baseline.pth", map_location=device, weights_only=False))
     model.eval()
