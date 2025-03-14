@@ -187,7 +187,6 @@ def test_with_noise(model, testloader, device, noise_std=0.1):
     print("Classification Report:")
     print(classification_report(all_labels, all_preds))
     with open(f"./Eurosat_results/Eurosat_baselineCNN_classification_report_noise_{noise_std}.txt", 'a', newline='') as file:
-        # clear file
         file.truncate(0)
         file.write(f'Test Accuracy: {accuracy:.2f}%, Test Loss: {test_loss}\n')
         file.write(classification_report(all_labels, all_preds))
@@ -205,50 +204,36 @@ def main():
     dropout_rate = 0.0
     
     train_loader, val_loader, test_loader = load_eurosat_data(batch_size)
-    model = CNN(dropout_rate=dropout_rate).to(device)
+    model = CNN().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     
     best_val_acc = 0
-    accs, val_losses, losses = [], [], []
     
     for epoch in range(num_epochs):
         train_loss, train_acc = train(model, train_loader, optimizer, criterion, device, epoch+1)
-        val_loss, val_acc = valtest(model, val_loader, criterion, device)
+        val_loss, val_acc = valtest(model, valloader, criterion, device)
         
-        accs.append(val_acc)
-        val_losses.append(val_loss)
-        losses.append(train_loss)
+        print(f'Epoch {epoch+1}/{num_epochs}:')
+        print(f'Train Loss: {train_loss:.4f}, Train Accuracy: {train_acc:.2f}%')
+        print(f'Val Loss: {val_loss:.4f}, Val Accuracy: {val_acc:.2f}%')
+
+        # plot training and validation loss, and training and validation accuracy
+        # save the plot as a .png file
+        plt.plot(epoch, train_loss, label='Training Loss')
+        plt.plot(epoch, val_loss, label='Validation Loss')
+        plt.plot(epoch, train_acc, label='Training Accuracy')
+        plt.plot(epoch, val_acc, label='Validation Accuracy')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss/Accuracy')
+        plt.legend()
+        plt.savefig('./Eurosat_results/Eurosat_baselineCNN_plot.png')
+        plt.show()
         
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             torch.save(model.state_dict(), './Eurosat_results/Eurosat_baselineCNN_best.pth')
-            print(f'Model saved with val accuracy: {val_acc:.2f}%')
-    
-    
-    plt.figure()
-    plt.plot(np.arange(1, epoch + 2), accs)
-    plt.xlabel("Epoch")
-    plt.ylabel("Validation Accuracy")
-    plt.title("LeHDC CNN Validation Accuracy over Epochs")
-    plt.savefig("./Eurosat_results/Eurosat_baselineCNN_val_acc.png")
-    
-    plt.figure()
-    plt.plot(np.arange(1, epoch + 2), losses)
-    plt.xlabel("Epoch")
-    plt.ylabel("Training Loss")
-    plt.title("LeHDC CNN Training Loss over Epochs")
-    plt.savefig("./Eurosat_results/Eurosat_baselineCNN_training_loss.png")
-    
-    plt.figure()
-    plt.plot(np.arange(1, epoch + 2), val_losses)
-    plt.xlabel("Epoch")
-    plt.ylabel("Validation Loss")
-    plt.title("LeHDC CNN Baseline Validation Loss over Epochs")
-    plt.savefig("./Eurosat_results/Eurosat_baselineCNN_val_loss.png")
-    
-    plt.close('all')
-        
+            print(f'Model saved with val accuracy: {val_acc:.2f}%')        
     
     print(f'Best val accuracy: {best_val_acc:.2f}%')
     
