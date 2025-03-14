@@ -23,13 +23,14 @@ class KAN(nn.Module):
         )
         self.conv2 = KAN_Convolutional_Layer(in_channels=4,
             out_channels= 8,
-            kernel_size= (5,5),
+            kernel_size= (10,10),
             grid_size = grid_size
         )
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
         self.fc1 = nn.Linear(43808, 512)
+        self.dropout = nn.Dropout(0.5)
         self.classifier = nn.Linear(512, 10)  # Output 10 classes for Imagenette
 
     def forward(self, x):
@@ -38,6 +39,7 @@ class KAN(nn.Module):
         x = self.flatten(x)
 
         x = self.fc1(x)
+        x = self.dropout(x)
         x = self.classifier(x)
 
         return x
@@ -209,9 +211,9 @@ def main():
     print(f"Using device: {device}")
     
     # Hyperparams
-    batch_size = 4
+    batch_size = 8
     learning_rate = 0.001
-    num_epochs = 10
+    num_epochs = 5
     
     train_loader, valloader, test_loader = load_Imagenette_data(batch_size)
     model = KAN().to(device)
