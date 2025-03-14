@@ -16,38 +16,28 @@ from kan_convolutional.KANConv import KAN_Convolutional_Layer
 class KAN(nn.Module):
     def __init__(self, grid_size: int = 5):
         super(KAN, self).__init__()
-        self.conv1 = KAN_Convolutional_Layer(in_channels=3,
-                                             out_channels=4,
-                                             kernel_size=(3, 3),
-                                             grid_size=grid_size)
-        self.conv2 = KAN_Convolutional_Layer(in_channels=4,
-                                             out_channels=8,
-                                             kernel_size=(3, 3),
-                                             grid_size=grid_size)
+        self.conv1 = KAN_Convolutional_Layer(in_channels=1,
+            out_channels= 2,
+            kernel_size= (3,3),
+            grid_size = grid_size,
+            padding=(1,1)
+        )
+        self.conv2 = KAN_Convolutional_Layer(in_channels=2,
+            out_channels= 2,
+            kernel_size= (3,3),
+            grid_size = grid_size,
+            padding=(1,1)
+        )
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
-
-        # We will calculate the correct input size here
-        # We'll use a dummy input to get the dimensions
-        dummy_input = torch.zeros(1, 3, 64, 64)  # (Batch size, Channels, Height, Width)
-        with torch.no_grad():
-            output_size = self._get_conv_output(dummy_input)
         
-        self.fc1 = nn.Linear(output_size, 512)
-        self.classifier = nn.Linear(512, 10)  # Output 10 classes for Eurosat
-
-    def _get_conv_output(self, shape):
-        # Pass a dummy tensor through the model to get the output shape
-        x = self.pool(self.conv1(shape))  # After first conv + pool
-        x = self.conv2(x)  # After second conv
-        return int(np.prod(x.size()))  # Flatten all dimensions except the batch
+        self.classifier = nn.Linear(98, 10)  # Output 10 classes for Eurosat
 
     def forward(self, x):
         x = self.pool(self.conv1(x))  # Apply conv1 and pool
         x = self.conv2(x)  # Apply conv2
         x = self.flatten(x)  # Flatten the tensor for the fully connected layer
 
-        x = self.fc1(x)  # Fully connected layer
         x = self.classifier(x)  # Final classifier layer
 
         return x
