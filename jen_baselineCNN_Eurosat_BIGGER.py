@@ -16,7 +16,7 @@ import seaborn as sns
 import torch.nn as nn
 
 class CNN(nn.Module):
-    def __init__(self):
+    def __init__(self, input_size=64):
         super(CNN, self).__init__()
         self.conv1 = nn.Conv2d(3, 32, kernel_size=3)  
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3)
@@ -24,18 +24,26 @@ class CNN(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.fc1 = nn.Linear(128 * 6 * 6, 256)
-        self.classifier = nn.Linear(256, 10)  
+        # Compute output size dynamically
+        with torch.no_grad():
+            sample_input = torch.zeros(1, 3, input_size, input_size)  # Dummy input
+            sample_output = self.forward_features(sample_input)
+            self.feature_dim = sample_output.view(1, -1).size(1)  # Compute the size dynamically
 
-    def forward(self, x):
+        self.fc1 = nn.Linear(self.feature_dim, 256)
+        self.classifier = nn.Linear(256, 10)
+
+    def forward_features(self, x):
         x = self.pool(F.relu(self.conv1(x)))
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
-        x = self.flatten(x)
+        return x
 
+    def forward(self, x):
+        x = self.forward_features(x)
+        x = self.flatten(x)
         x = F.relu(self.fc1(x))
         x = self.classifier(x)
-
         return x
 
 
