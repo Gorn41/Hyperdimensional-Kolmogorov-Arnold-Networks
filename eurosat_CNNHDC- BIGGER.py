@@ -27,13 +27,7 @@ class CNNFeatureExtractor(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        # Compute output size dynamically
-        with torch.no_grad():
-            sample_input = torch.zeros(1, 3, 64, 64)  # Dummy input
-            sample_output = self.forward_features(sample_input)
-            self.feature_dim = sample_output.view(1, -1).size(1)  # Compute the size dynamically
-        print(self.feature_dim)
-        self.fc1 = nn.Linear(self.feature_dim, 256)
+        self.fc1 = nn.Linear(2916, 256)
         self.classifier = nn.Linear(256, 10)
 
     def forward(self, x):
