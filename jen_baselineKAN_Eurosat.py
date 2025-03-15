@@ -17,19 +17,19 @@ class KAN(nn.Module):
     def __init__(self, grid_size: int = 5):
         super(KAN, self).__init__()
         self.conv1 = KAN_Convolutional_Layer(in_channels=3,
-            out_channels= 9,
+            out_channels= 3,
             kernel_size= (3,3),
             grid_size = grid_size,
             padding=(1,1)
         )
-        self.conv2 = KAN_Convolutional_Layer(in_channels=9,
-            out_channels= 18,
+        self.conv2 = KAN_Convolutional_Layer(in_channels=3,
+            out_channels= 3,
             kernel_size= (3,3),
             grid_size = grid_size,
             padding=(1,1)
         )
-        self.conv3 = KAN_Convolutional_Layer(in_channels=18,
-            out_channels= 27,
+        self.conv3 = KAN_Convolutional_Layer(in_channels=3,
+            out_channels= 3,
             kernel_size= (3,3),
             grid_size = grid_size,
             padding=(1,1)
@@ -37,15 +37,15 @@ class KAN(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
         
         self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(1728, 768)
-        self.classifier = nn.Linear(768, 10)  # Output 10 classes for Eurosat
+        
+        self.classifier = nn.Linear(192, 10)  # Output 10 classes for Eurosat
 
     def forward(self, x):
         x = self.pool(self.conv1(x))  # Apply conv1 and pool
         x = self.pool(self.conv2(x))  # Apply conv2
         x = self.pool(self.conv3(x)) # Apply conv3
         x = self.flatten(x)  # Flatten the tensor for the fully connected layer
-        x = self.fc1(F.relu(x))
+
         x = self.classifier(x)  # Final classifier layer
 
         return x
