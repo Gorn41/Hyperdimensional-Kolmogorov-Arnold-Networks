@@ -20,7 +20,7 @@ class CNN(nn.Module):
         super(CNN, self).__init__()
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3)  
         self.conv2 = nn.Conv2d(16, 32, kernel_size=3)
-        self.conv3 = nn.Conv2d(32, 16, kernel_size=3)
+        self.conv3 = nn.Conv2d(32, 8, kernel_size=3)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
@@ -29,7 +29,7 @@ class CNN(nn.Module):
             sample_input = torch.zeros(1, 3, input_size, input_size)  # Dummy input
             sample_output = self.forward_features(sample_input)
             self.feature_dim = sample_output.view(1, -1).size(1)  # Compute the size dynamically
-
+        print(self.feature_dim)
         self.fc1 = nn.Linear(self.feature_dim, 256)
         self.classifier = nn.Linear(256, 10)
 

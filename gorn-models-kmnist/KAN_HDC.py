@@ -102,7 +102,7 @@ class KAN_HDC(nn.Module):
     
         lehdc_loader = torch.utils.data.DataLoader(
             dataset, 
-            batch_size=32,  
+            batch_size=64,  
             shuffle=True   
         )
 
@@ -123,7 +123,7 @@ class KAN_HDC(nn.Module):
     
         lehdc_val_loader = torch.utils.data.DataLoader(
         valdataset, 
-        batch_size=32,  
+        batch_size=64,  
         shuffle=True   
         )
 
@@ -241,7 +241,7 @@ def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def load_mnist_data(batch_size=32):
+def load_mnist_data(batch_size=64):
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
@@ -259,7 +259,7 @@ def load_mnist_data(batch_size=32):
 
 def main():
      # Hyperparams
-    batch_size = 32
+    batch_size = 64
 
     model = KAN_HDC()
     train_loader, valloader, test_loader = load_mnist_data(batch_size)

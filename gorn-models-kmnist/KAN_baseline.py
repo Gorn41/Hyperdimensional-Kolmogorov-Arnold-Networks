@@ -191,7 +191,7 @@ def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def load_mnist_data(batch_size=32):
+def load_mnist_data(batch_size=64):
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
@@ -212,7 +212,7 @@ def main():
     print(f"Using device: {device}")
     
     # Hyperparams
-    batch_size = 32
+    batch_size = 64
     learning_rate = 0.001
     num_epochs = 10
     
