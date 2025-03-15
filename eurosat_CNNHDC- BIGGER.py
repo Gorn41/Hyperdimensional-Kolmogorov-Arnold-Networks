@@ -27,8 +27,8 @@ class CNNFeatureExtractor(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.fc1 = nn.Linear(2916, 256)
-        self.classifier = nn.Linear(256, 10)
+        self.fc1 = nn.Linear(2916, 192)
+        self.classifier = nn.Linear(192, 10)
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))

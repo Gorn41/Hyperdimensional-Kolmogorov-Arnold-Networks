@@ -30,8 +30,8 @@ class CNN(nn.Module):
             sample_output = self.forward_features(sample_input)
             self.feature_dim = sample_output.view(1, -1).size(1)  # Compute the size dynamically
         print(self.feature_dim)
-        self.fc1 = nn.Linear(self.feature_dim, 256)
-        self.classifier = nn.Linear(256, 10)
+        self.fc1 = nn.Linear(self.feature_dim, 192)
+        self.classifier = nn.Linear(192, 10)
 
     def forward_features(self, x):
         x = self.pool(F.relu(self.conv1(x)))
