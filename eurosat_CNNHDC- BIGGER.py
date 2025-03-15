@@ -21,45 +21,46 @@ import pandas as pd
 class CNNFeatureExtractor(nn.Module):
     def __init__(self, grid_size=5):
         super(CNNFeatureExtractor, self).__init__()
-        self.conv1 = nn.Conv2d(1, 5, kernel_size=3)  # Change input channels to 3 (RGB)
-        self.conv2 = nn.Conv2d(5, 5, kernel_size=3)
-        self.conv3 = nn.Conv2d(5, 2, kernel_size=3)
+        self.conv1 = nn.Conv2d(3, 6, kernel_size=3)  
+        self.conv2 = nn.Conv2d(6, 8, kernel_size=3)
+        self.conv3 = nn.Conv2d(8, 4, kernel_size=3)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
-        self.feature_size = 162
-        self.fc1 = nn.Linear(self.feature_size, 96)
-        self.classifier = nn.Linear(96, 10)  # Output 100 classes for CIFAR-100
-    
-        # Chopped off the classifier layer
-
+        # Compute output size dynamically
+        with torch.no_grad():
+            sample_input = torch.zeros(1, 3, input_size, input_size)  # Dummy input
+            sample_output = self.forward_features(sample_input)
+            self.feature_dim = sample_output.view(1, -1).size(1)  # Compute the size dynamically
+        print(self.feature_dim)
+        self.fc1 = nn.Linear(self.feature_dim, 256)
+        self.classifier = nn.Linear(256, 10)
 
     def forward(self, x):
-        x = self.pool(self.conv1(x)) # Apply ReLU activation
-        x = self.conv2(x)
-        x = self.conv3(x)
+        x = self.pool(F.relu(self.conv1(x)))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
         x = self.flatten(x)
-        x = self.fc1(x)
-        # Chopped off the classifier layer
+        x = F.relu(self.fc1(x))
 
         return x
         
 # This class is a combination of the CNNFeatureExtractor and LeHDC classes
 class CNN_HDC(nn.Module):
-    def __init__(self, n_dimensions=1000, n_classes=10, n_levels=50, grid_size=5):
+    def __init__(self, n_dimensions=10000, n_classes=10, n_levels=100, grid_size=5):
         super(CNN_HDC, self).__init__()
         self.feature_network = CNNFeatureExtractor(grid_size=grid_size)
         
         # LeHDC classifier as a separate component
         self.lehdc = LeHDC(
-            n_features=96,
+            n_features=192,
             n_dimensions=n_dimensions,
             n_classes=n_classes,
             n_levels=n_levels,
             min_level=-1,
             max_level=1,
-            epochs=50,
-            dropout_rate=0.3,
+            epochs=60,
+            dropout_rate=0.2,
             lr=0.001,
             device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
         )
@@ -89,7 +90,7 @@ class CNN_HDC(nn.Module):
     
         lehdc_loader = torch.utils.data.DataLoader(
             dataset, 
-            batch_size=64,  
+            batch_size=32,  
             shuffle=True   
         )
 
@@ -110,7 +111,7 @@ class CNN_HDC(nn.Module):
     
         lehdc_val_loader = torch.utils.data.DataLoader(
         valdataset, 
-        batch_size=64,  
+        batch_size=32,  
         shuffle=True   
         )
 
@@ -228,28 +229,29 @@ def test_with_noise(name, folder, model, testloader, device, noise_std=0.1):
 
     return accuracy, test_loss
 
-def load_mnist_data(batch_size=64):
+def load_eurosat_data(batch_size=32):
     transform = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
+    dataset = datasets.EuroSAT(root='data', download=True, transform=transform)
+    train_size = int(0.7 * len(dataset))
+    val_size = int(0.15 * len(dataset))
+    test_size = len(dataset) - train_size - val_size
+    train_data, val_data, test_data = torch.utils.data.random_split(dataset, [train_size, val_size, test_size])
     
-    train_data = torchvision.datasets.KMNIST(root='data', train=True, download=True, transform=transform)
-    other_data = torchvision.datasets.KMNIST(root='data', train=False, download=True, transform=transform)
-    val_data, test_data = torch.utils.data.random_split(other_data, [0.5, 0.5])
-
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
-    valloader = torch.utils.data.DataLoader(val_data, batch_size=batch_size, shuffle=True)
-    test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size)
+    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_data, batch_size=batch_size)
+    test_loader = DataLoader(test_data, batch_size=batch_size)
     
-    return train_loader, valloader, test_loader
+    return train_loader, val_loader, test_loader
 
 def main():
      # Hyperparams
-    batch_size = 64
+    batch_size = 32
 
     model = CNN_HDC()
-    train_loader, valloader, test_loader = load_mnist_data(batch_size)
+    train_loader, valloader, test_loader = load_eurosat_data(batch_size)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
