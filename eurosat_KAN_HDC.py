@@ -273,11 +273,11 @@ def main():
 
     model.eval()
 
-    test("baselineHDCKAN", "Eurosat_results", model, test_loader, device)
-    test_with_noise("baselineHDCKAN", "Eurosat_results", model, test_loader, device, noise_std=0.1)
-    test_with_noise("baselineHDCKAN", "Eurosat_results", model, test_loader, device, noise_std=0.4)
-    test_with_noise("baselineHDCKAN", "Eurosat_results", model, test_loader, device, noise_std=0.7)
-    test_with_noise("baselineHDCKAN", "Eurosat_results", model, test_loader, device, noise_std=1.0)
+    test("HDCKAN", "Eurosat_results", model, test_loader, device)
+    test_with_noise("HDCKAN", "Eurosat_results", model, test_loader, device, noise_std=0.1)
+    test_with_noise("HDCKAN", "Eurosat_results", model, test_loader, device, noise_std=0.4)
+    test_with_noise("HDCKAN", "Eurosat_results", model, test_loader, device, noise_std=0.7)
+    test_with_noise("HDCKAN", "Eurosat_results", model, test_loader, device, noise_std=1.0)
 
 if __name__ == '__main__':
     main()
