@@ -35,7 +35,7 @@ class CNNFeatureExtractor(nn.Module):
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
+        x = self.fc1(x)
 
         return x
         

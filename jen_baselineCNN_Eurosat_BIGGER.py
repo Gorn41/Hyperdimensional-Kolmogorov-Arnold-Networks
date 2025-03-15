@@ -42,7 +42,7 @@ class CNN(nn.Module):
     def forward(self, x):
         x = self.forward_features(x)
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
+        x = self.fc1(x)
         x = self.classifier(x)
         return x
 
