@@ -18,9 +18,9 @@ import torch.nn as nn
 class CNN(nn.Module):
     def __init__(self, input_size=64):
         super(CNN, self).__init__()
-        self.conv1 = nn.Conv2d(3, 8, kernel_size=3)  
-        self.conv2 = nn.Conv2d(8, 16, kernel_size=3)
-        self.conv3 = nn.Conv2d(16, 8, kernel_size=3)
+        self.conv1 = nn.Conv2d(3, 6, kernel_size=3)  
+        self.conv2 = nn.Conv2d(6, 12, kernel_size=3)
+        self.conv3 = nn.Conv2d(12, 6, kernel_size=3)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
 
