@@ -41,7 +41,7 @@ class CNNFeatureExtractor(nn.Module):
         
 # This class is a combination of the CNNFeatureExtractor and LeHDC classes
 class CNN_HDC(nn.Module):
-    def __init__(self, n_dimensions=6000, n_classes=10, n_levels=120, grid_size=5):
+    def __init__(self, n_dimensions=6000, n_classes=10, n_levels=200, grid_size=5):
         super(CNN_HDC, self).__init__()
         self.feature_network = CNNFeatureExtractor(grid_size=grid_size)
         
