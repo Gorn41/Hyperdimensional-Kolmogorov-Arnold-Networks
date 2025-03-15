@@ -37,7 +37,7 @@ class KAN(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
         
         self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(1536, 768)
+        self.fc1 = nn.Linear(1728, 768)
         self.classifier = nn.Linear(768, 10)  # Output 10 classes for Eurosat
 
     def forward(self, x):
