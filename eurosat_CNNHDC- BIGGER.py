@@ -29,7 +29,7 @@ class CNNFeatureExtractor(nn.Module):
 
         # Compute output size dynamically
         with torch.no_grad():
-            sample_input = torch.zeros(1, 3, input_size, input_size)  # Dummy input
+            sample_input = torch.zeros(1, 3, 64, 64)  # Dummy input
             sample_output = self.forward_features(sample_input)
             self.feature_dim = sample_output.view(1, -1).size(1)  # Compute the size dynamically
         print(self.feature_dim)
@@ -256,17 +256,17 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
-    model.feature_network.load_state_dict(torch.load("CNN_baseline_results/CNN_baseline.pth", map_location=device))
+    model.feature_network.load_state_dict(torch.load("./Eurosat_results/baselineCNN_BIGGER_best.pth", map_location=device))
 
     model.train_lehdc(train_loader, valloader)
 
     model.eval()
 
-    test("CNN_HDC", "CNN_HDC_results", model, test_loader, device)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=0.1)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=0.4)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=0.7)
-    test_with_noise("CNN_HDC", "CNN_HDC_results", model, test_loader, device, noise_std=1.0)
+    test("HDCCNN-BIGGER", "Eurosat_results", model, test_loader, device)
+    test_with_noise("HDCCNN-BIGGER", "Eurosat_results", model, test_loader, device, noise_std=0.1)
+    test_with_noise("HDCCNN-BIGGER", "Eurosat_results", model, test_loader, device, noise_std=0.4)
+    test_with_noise("HDCCNN-BIGGER", "Eurosat_results", model, test_loader, device, noise_std=0.7)
+    test_with_noise("HDCCNN-BIGGER", "Eurosat_results", model, test_loader, device, noise_std=1.0)
 
 if __name__ == '__main__':
     main()
