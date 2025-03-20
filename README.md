@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This repository contains the implementation of Hyperdimensional Kolmogorov Networks (HDKAN), which combine Kolmogorov-Arnold Networks (KANs) for efficient feature extraction and Learning-based Hyperdimensional Computing (LeHDC) classifiers for effective and energy-efficient classification.
+This repository contains the implementation of Hyperdimensional Kolmogorov Networks (HDKAN), which combine Kolmogorov-Arnold Networks (KANs) for efficient feature extraction and Learning-based Hyperdimensional Computing (LeHDC) classifiers for effective, parameter-efficient and energy-efficient classification.
 
 ## Project Overview
 
