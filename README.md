@@ -1,4 +1,4 @@
-# Hyperdimensional Kolmogorov Networks (HDKAN)
+# Hyperdimensional Kolmogorov-Arnold Networks (HDKAN)
 
 ## Introduction
 
